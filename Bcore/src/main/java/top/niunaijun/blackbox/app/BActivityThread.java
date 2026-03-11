@@ -1028,14 +1028,14 @@ public class BActivityThread extends IBActivityThread.Stub {
             assert vPackageName != null;
             assert vProcessName != null;
             boolean isFirstApplication = vPackageName.equals(vProcessName);
-            ClassLoader moduleClassLoader = new PathClassLoader(moduleApkPath, xposedApiClassLoader);
+            ClassLoader xposedApiClassLoader = XposedInit.class.getClassLoader();
             List<InstalledModule> installedModules = BXposedManager.get().getInstalledModules();
             for (InstalledModule installedModule : installedModules) {
                 if (!installedModule.enable) {
                     continue;
                 }
                 try {
-                    XposedInit.loadModule(installedModule.getApplication().sourceDir, moduleClassLoader);
+                    XposedInit.loadModule(installedModule.getApplication().sourceDir, xposedApiClassLoader);
                 } catch (Throwable e) {
                     String msg = "Failed to load Xposed module: " + installedModule.getApplication().packageName
                                + " (" + installedModule.getApplication().sourceDir + ")\n"
