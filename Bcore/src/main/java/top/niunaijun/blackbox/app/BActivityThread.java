@@ -86,6 +86,7 @@ import top.niunaijun.blackbox.utils.compat.ContextCompat;
 import top.niunaijun.blackbox.utils.compat.StrictModeCompat;
 import top.niunaijun.blackbox.core.system.JarManager;
 import top.niunaijun.blackbox.utils.XposedErrorLogger;
+import de.robv.android.xposed.XposedInit; 
 
 public class BActivityThread extends IBActivityThread.Stub {
     public static final String TAG = "BActivityThread";
