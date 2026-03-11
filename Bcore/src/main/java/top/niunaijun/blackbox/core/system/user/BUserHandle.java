@@ -30,7 +30,7 @@ public final class BUserHandle implements Parcelable {
     public static final int USER_CURRENT_OR_SELF = -3;
 
 
-
+    public static final int USER_XPOSED = -4;
 
     
     public static final BUserHandle CURRENT_OR_SELF = new BUserHandle(USER_CURRENT_OR_SELF);

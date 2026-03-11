@@ -3,7 +3,6 @@ package top.niunaijun.blackboxa.view.main
 import android.app.Application
 import android.content.Context
 import android.util.Log
-import java.io.File
 import top.niunaijun.blackbox.BlackBoxCore
 import top.niunaijun.blackbox.app.BActivityThread
 import top.niunaijun.blackbox.app.configuration.AppLifecycleCallback
@@ -11,12 +10,13 @@ import top.niunaijun.blackbox.app.configuration.ClientConfiguration
 import top.niunaijun.blackboxa.app.App
 import top.niunaijun.blackboxa.app.rocker.RockerManager
 import top.niunaijun.blackboxa.biz.cache.AppSharedPreferenceDelegate
+import java.io.File
 
 
 class BlackBoxLoader {
 
     private var mHideRoot by AppSharedPreferenceDelegate(App.getContext(), false)
-
+    private var mHideXposed by AppSharedPreferenceDelegate(App.getContext(), false)
     private var mDaemonEnable by AppSharedPreferenceDelegate(App.getContext(), false)
     private var mShowShortcutPermissionDialog by AppSharedPreferenceDelegate(App.getContext(), true)
 
@@ -56,6 +56,23 @@ class BlackBoxLoader {
             this.mDisableFlagSecure = disable
         } catch (e: Exception) {
             Log.e(TAG, "Error setting disableFlagSecure: ${e.message}")
+        }
+    }
+
+    fun hideXposed(): Boolean {
+        return try {
+            mHideXposed
+        } catch (e: Exception) {
+            Log.e(TAG, "Error getting hideXposed: ${e.message}")
+            false
+        }
+    }
+
+    fun invalidHideXposed(hideXposed: Boolean) {
+        try {
+            this.mHideXposed = hideXposed
+        } catch (e: Exception) {
+            Log.e(TAG, "Error setting hideXposed: ${e.message}")
         }
     }
 
@@ -240,6 +257,15 @@ class BlackBoxLoader {
                                         mHideRoot
                                     } catch (e: Exception) {
                                         Log.e(TAG, "Error checking hideRoot: ${e.message}")
+                                        false
+                                    }
+                                }
+
+                                override fun isHideXposed(): Boolean {
+                                    return try {
+                                        mHideXposed
+                                    } catch (e: Exception) {
+                                        Log.e(TAG, "Error checking hideXposed: ${e.message}")
                                         false
                                     }
                                 }

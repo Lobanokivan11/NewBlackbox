@@ -69,7 +69,12 @@ public class BPackageSettings implements Parcelable {
             state = new BPackageUserState();
         }
         state = new BPackageUserState(state);
-        
+
+        if (installOption.isFlag(InstallOption.FLAG_XPOSED) &&
+                BXposedManagerService.get().isModuleEnable(pkg.packageName) &&
+                BXposedManagerService.get().isXPEnable()) {
+            state.installed = true;
+        }
 
         if (userId == BUserHandle.USER_ALL) {
             state.installed = true;

@@ -1,11 +1,10 @@
 package top.niunaijun.blackboxa.data
 
+import android.content.Context
 import android.content.pm.ApplicationInfo
 import android.net.Uri
 import android.util.Log
-import android.webkit.URLUtil
 import androidx.lifecycle.MutableLiveData
-import java.io.File
 import top.niunaijun.blackbox.BlackBoxCore
 import top.niunaijun.blackbox.utils.AbiUtils
 import top.niunaijun.blackboxa.R
@@ -13,7 +12,11 @@ import top.niunaijun.blackboxa.app.AppManager
 import top.niunaijun.blackboxa.bean.AppInfo
 import top.niunaijun.blackboxa.bean.InstalledAppBean
 import top.niunaijun.blackboxa.util.MemoryManager
+import top.niunaijun.blackboxa.util.inflate
 import top.niunaijun.blackboxa.util.getString
+import java.io.File
+import android.webkit.URLUtil
+
 
 
 class AppsRepository {
@@ -72,6 +75,7 @@ class AppsRepository {
             } else {
                 icon
             }
+            
         } catch (e: Exception) {
             Log.w(TAG, "Failed to load icon for ${applicationInfo.packageName}: ${e.message}")
             null 
@@ -103,7 +107,7 @@ class AppsRepository {
                             continue
                         }
 
-                        val isXpModule = false
+                        val isXpModule = BlackBoxCore.get().isXposedModule(file)
 
                         val info =
                                 AppInfo(
@@ -156,6 +160,35 @@ class AppsRepository {
             }
         } catch (e: Exception) {
             Log.e(TAG, "Error in getInstalledAppList: ${e.message}")
+            loadingLiveData.postValue(false)
+            appsLiveData.postValue(emptyList())
+        }
+    }
+
+    fun getInstalledModuleList(
+        loadingLiveData: MutableLiveData<Boolean>,
+        appsLiveData: MutableLiveData<List<InstalledAppBean>>
+    ) {
+        try {
+            loadingLiveData.postValue(true)
+            synchronized(mInstalledList) {
+                val blackBoxCore = BlackBoxCore.get()
+                val moduleList = mInstalledList.filter {
+                    it.isXpModule
+                }.map {
+                    InstalledAppBean(
+                        it.name,
+                        it.icon, // Remove the !! operator to allow null icons
+                        it.packageName,
+                        it.sourceDir,
+                        blackBoxCore.isInstalledXposedModule(it.packageName)
+                    )
+                }
+                appsLiveData.postValue(moduleList)
+                loadingLiveData.postValue(false)
+            }
+        } catch (e: Exception) {
+            Log.e(TAG, "Error in getInstalledModuleList: ${e.message}")
             loadingLiveData.postValue(false)
             appsLiveData.postValue(emptyList())
         }
@@ -283,7 +316,7 @@ class AppsRepository {
                                     ), 
                                     applicationInfo.packageName,
                                     applicationInfo.sourceDir ?: "",
-                                    false
+                                    isInstalledXpModule(applicationInfo.packageName)
                             )
 
                     appInfoList.add(info)
@@ -334,19 +367,14 @@ class AppsRepository {
                         try {
                             appsLiveData.postValue(appInfoList)
                         } catch (e2: Exception) {
-                            Log.e(
-                                    TAG,
-                                    "getVmInstallList: Fallback posting also failed: ${e2.message}"
-                            )
+                            Log.e(TAG, "getVmInstallList: Fallback posting also failed: ${e2.message}")
                         }
                     }
                 } catch (e3: Exception) {
-                    Log.e(
-                            TAG,
-                            "getVmInstallList: Could not schedule fallback posting: ${e3.message}"
-                    )
+                    Log.e(TAG, "getVmInstallList: Could not schedule fallback posting: ${e3.message}")
                 }
             }
+            
         } catch (e: Exception) {
             Log.e(TAG, "Error in getVmInstallList: ${e.message}")
             try {
@@ -354,6 +382,20 @@ class AppsRepository {
             } catch (e2: Exception) {
                 Log.e(TAG, "getVmInstallList: Error posting empty list: ${e2.message}")
             }
+        }
+    }
+
+    private fun isInstalledXpModule(packageName: String): Boolean {
+        return try {
+            BlackBoxCore.get().installedXPModules.forEach {
+                if (packageName == it.packageName) {
+                    return@isInstalledXpModule true
+                }
+            }
+            false
+        } catch (e: Exception) {
+            Log.e(TAG, "Error checking Xposed module: ${e.message}")
+            false
         }
     }
 
@@ -389,15 +431,14 @@ class AppsRepository {
                     Log.w(TAG, "Could not verify if this is BlackBox app: ${e.message}")
                 }
             }
-
+            
             val blackBoxCore = BlackBoxCore.get()
-            val installResult =
-                    if (URLUtil.isValidUrl(source)) {
-                        val uri = Uri.parse(source)
-                        blackBoxCore.installPackageAsUser(uri, userId)
-                    } else {
-                        blackBoxCore.installPackageAsUser(source, userId)
-                    }
+            val installResult = if (URLUtil.isValidUrl(source)) {
+                val uri = Uri.parse(source)
+                blackBoxCore.installPackageAsUser(uri, userId)
+            } else {
+                blackBoxCore.installPackageAsUser(source, userId)
+            }
 
             if (installResult.success) {
                 updateAppSortList(userId, installResult.packageName, true)
@@ -473,7 +514,8 @@ class AppsRepository {
     
     private fun updateAppSortList(userID: Int, pkg: String, isAdd: Boolean) {
         try {
-            val savedSortList = AppManager.mRemarkSharedPreferences.getString("AppList$userID", "")
+            val savedSortList =
+                AppManager.mRemarkSharedPreferences.getString("AppList$userID", "")
 
             val sortList = linkedSetOf<String>()
             if (savedSortList != null) {

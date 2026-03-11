@@ -44,7 +44,7 @@ import top.niunaijun.blackbox.utils.AbiUtils;
 import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.Slog;
 import top.niunaijun.blackbox.utils.compat.PackageParserCompat;
-
+import top.niunaijun.blackbox.utils.compat.XposedParserCompat;
 
 import static android.content.pm.PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
 
@@ -526,7 +526,9 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
                 BPackageSettings ps = mPackages.get(packageName);
                 if (ps == null)
                     return;
-
+                if (ps.installOption.isFlag(InstallOption.FLAG_XPOSED) && userId != BUserHandle.USER_XPOSED) {
+                    return;
+                }
                 if (!isInstalled(packageName, userId)) {
                     return;
                 }
@@ -557,6 +559,15 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
                 if (ps == null)
                     return;
                 BProcessManagerService.get().killAllByPackageName(packageName);
+                if (ps.installOption.isFlag(InstallOption.FLAG_XPOSED)) {
+                    for (BUserInfo user : BUserManagerService.get().getAllUsers()) {
+                        int i = BPackageInstallerService.get().uninstallPackageAsUser(ps, true, user.id);
+                        if (i < 0) {
+                            continue;
+                        }
+                        onPackageUninstalled(packageName, true, user.id);
+                    }
+                } else {
                     for (Integer userId : ps.getUserIds()) {
                         int i = BPackageInstallerService.get().uninstallPackageAsUser(ps, true, userId);
                         if (i < 0) {
@@ -564,6 +575,7 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
                         }
                         onPackageUninstalled(packageName, true, userId);
                     }
+                }
                 mSettings.removePackage(packageName);
                 mComponentResolver.removeAllComponents(ps.pkg);
             }
@@ -661,7 +673,12 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
                 apkFile = new File(file);
             }
 
-
+            if (option.isFlag(InstallOption.FLAG_XPOSED) && userId != BUserHandle.USER_XPOSED) {
+                return new InstallResult().installError("Please install the XP module in XP module management");
+            }
+            if (option.isFlag(InstallOption.FLAG_XPOSED) && !XposedParserCompat.isXPModule(apkFile.getAbsolutePath())) {
+                return new InstallResult().installError("not a XP module");
+            }
 
             PackageInfo packageArchiveInfo = BlackBoxCore.getPackageManager().getPackageArchiveInfo(apkFile.getAbsolutePath(), 0);
             if (packageArchiveInfo == null) {
