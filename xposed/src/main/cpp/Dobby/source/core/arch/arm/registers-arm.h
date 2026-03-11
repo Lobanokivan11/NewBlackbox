@@ -30,16 +30,12 @@ public:
     return Register(code);
   }
 
-  bool Is(const Register &reg) const {
-    return (reg.reg_id == this->reg_id);
-  }
-
   bool IsValid() const {
-    return (reg_id != 0);
+    return (reg_code_ != 0);
   }
 
   int code() const {
-    return reg_id;
+    return reg_code_;
   }
 
 private:

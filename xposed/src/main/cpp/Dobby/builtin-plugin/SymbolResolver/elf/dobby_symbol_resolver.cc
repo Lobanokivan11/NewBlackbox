@@ -6,9 +6,9 @@
 #include <link.h>
 #include <string.h>
 
-#include "common/mmap_file_util.h"
+#include "mmap_file_util.h"
 
-#include "PlatformUtil/ProcessRuntime.h"
+#include "PlatformUtil/ProcessRuntimeUtility.h"
 
 #include <vector>
 
@@ -65,8 +65,8 @@ static void get_syms(ElfW(Ehdr) * header, ElfW(Sym) * *symtab_ptr, char **strtab
   }
 }
 
-int elf_ctx_init(elf_ctx_t *ctx, void *header) {
-  ElfW(Ehdr) *ehdr = (ElfW(Ehdr) *)header;
+int elf_ctx_init(elf_ctx_t *ctx, void *header_) {
+  ElfW(Ehdr) *ehdr = (ElfW(Ehdr) *)header_;
   ctx->header = ehdr;
 
   ElfW(Addr) ehdr_addr = (ElfW(Addr))ehdr;
@@ -168,9 +168,9 @@ void *resolve_elf_internal_symbol(const char *library_name, const char *symbol_n
   void *result = NULL;
 
   if (library_name) {
-    RuntimeModule module = ProcessRuntime::getModule(library_name);
+    RuntimeModule module = ProcessRuntimeUtility::GetProcessModule(library_name);
 
-    if (module.base) {
+    if (module.load_address) {
       auto mmapFileMng = MmapFileManager(module.path);
       auto file_mem = mmapFileMng.map();
 
@@ -182,15 +182,15 @@ void *resolve_elf_internal_symbol(const char *library_name, const char *symbol_n
       }
 
       if (result)
-        result = (void *)((addr_t)result + (addr_t)module.base - ((addr_t)file_mem - (addr_t)ctx.load_bias));
+        result = (void *)((addr_t)result + (addr_t)module.load_address - ((addr_t)file_mem - (addr_t)ctx.load_bias));
     }
   }
 
   if (!result) {
-    auto ProcessModuleMap = ProcessRuntime::getModuleMap();
+    auto ProcessModuleMap = ProcessRuntimeUtility::GetProcessModuleMap();
     for (auto module : ProcessModuleMap) {
 
-      if (module.base) {
+      if (module.load_address) {
         auto mmapFileMng = MmapFileManager(module.path);
         auto file_mem = mmapFileMng.map();
 
@@ -202,7 +202,7 @@ void *resolve_elf_internal_symbol(const char *library_name, const char *symbol_n
         }
 
         if (result)
-          result = (void *)((addr_t)result + (addr_t)module.base - ((addr_t)file_mem - (addr_t)ctx.load_bias));
+          result = (void *)((addr_t)result + (addr_t)module.load_address - ((addr_t)file_mem - (addr_t)ctx.load_bias));
       }
 
       if (result)

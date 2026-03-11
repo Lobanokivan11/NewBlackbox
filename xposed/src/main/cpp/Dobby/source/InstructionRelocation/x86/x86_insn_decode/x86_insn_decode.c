@@ -279,7 +279,7 @@ void x86_insn_decode_modrm_sib(x86_insn_reader_t *rd, x86_insn_decode_t *insn, x
 
   insn->flags |= X86_INSN_DECODE_FLAG_IS_ADDRESS;
 
-  uint8_t effective_address_bits;
+  uint8_t effective_address_bits = 0;
   if (conf->mode == 64)
     effective_address_bits = (insn->prefix & INSN_PREFIX_ADDRESS_SIZE) ? 32 : 64;
   else if (conf->mode == 32)

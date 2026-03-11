@@ -3,10 +3,10 @@
 
 #include "core/assembler/assembler-arm.h"
 
-void PseudoLabel::link_confused_instructions(CodeMemBuffer *buffer) {
+void AssemblerPseudoLabel::link_confused_instructions(CodeBufferBase *buffer) {
   CodeBuffer *_buffer = (CodeBuffer *)buffer;
 
-  for (auto &ref_label_insn : ref_insts) {
+  for (auto &ref_label_insn : ref_label_insns_) {
     arm_inst_t inst = _buffer->LoadARMInst(ref_label_insn.pc_offset);
     if (ref_label_insn.link_type == kLdrLiteral) {
       int64_t pc = ref_label_insn.pc_offset + ARM_PC_OFFSET;
@@ -32,7 +32,7 @@ void Assembler::EmitARMInst(arm_inst_t instr) {
 }
 
 void Assembler::EmitAddress(uint32_t value) {
-  buffer_->Emit<int32_t>(value);
+  buffer_->Emit32(value);
 }
 
 } // namespace arm

@@ -40,17 +40,17 @@ class Operand {
   friend class OpEncode;
 
 public:
-  Operand(int immediate) : imm_(immediate), rm_(no_reg), shift_(LSL), shift_imm_(0), rs_(no_reg) {
+  Operand(int immediate) : rm_(no_reg), rs_(no_reg), shift_(LSL), shift_imm_(0), imm_(immediate) {
   }
 
-  Operand(Register rm) : imm_(0), rm_(rm), shift_(LSL), shift_imm_(0), rs_(no_reg) {
+  Operand(Register rm) : rm_(rm), rs_(no_reg), shift_(LSL), shift_imm_(0), imm_(0) {
   }
 
   Operand(Register rm, Shift shift, uint32_t shift_imm)
-      : imm_(0), rm_(rm), shift_(shift), shift_imm_(shift_imm), rs_(no_reg) {
+      : rm_(rm), rs_(no_reg), shift_(shift), shift_imm_(shift_imm), imm_(0) {
   }
 
-  Operand(Register rm, Shift shift, Register rs) : imm_(0), rm_(rm), shift_(shift), shift_imm_(0), rs_(rs) {
+  Operand(Register rm, Shift shift, Register rs) : rm_(rm), rs_(rs), shift_(shift), shift_imm_(0), imm_(0) {
   }
 
 public:
@@ -78,15 +78,15 @@ class MemOperand {
 
 public:
   MemOperand(Register rn, int32_t offset = 0, AddrMode addrmode = Offset)
-      : rn_(rn), offset_(offset), rm_(no_reg), shift_(LSL), shift_imm_(0), addrmode_(addrmode) {
+      : rn_(rn), rm_(no_reg), offset_(offset), addrmode_(addrmode) {
   }
 
   MemOperand(Register rn, Register rm, AddrMode addrmode = Offset)
-      : rn_(rn), offset_(0), rm_(rm), shift_(LSL), shift_imm_(0), addrmode_(addrmode) {
+      : rn_(rn), rm_(rm), offset_(0), addrmode_(addrmode) {
   }
 
   MemOperand(Register rn, Register rm, Shift shift, uint32_t shift_imm, AddrMode addrmode = Offset)
-      : rn_(rn), offset_(0), rm_(rm), shift_(shift), shift_imm_(shift_imm), addrmode_(addrmode) {
+      : rn_(rn), rm_(rm), offset_(0), addrmode_(addrmode) {
   }
 
   const Register &rn() const {
@@ -118,9 +118,6 @@ private:
 
   int32_t offset_; // valid if rm_ == no_reg
 
-  Shift shift_;
-  uint32_t shift_imm_; // valid if rm_ != no_reg && rs_ == no_reg
-
   AddrMode addrmode_; // bits P, U, and W
 };
 
@@ -145,7 +142,7 @@ public:
     encoding |= bits(abs(operand.offset_), 0, 11);
 
     // addr mode
-    uint32_t P, W;
+    uint32_t P = 0, W = 0;
     if (operand.addrmode_ == Offset) {
       P = 1;
       W = 0;
@@ -317,13 +314,13 @@ public:
   TurboAssembler(void *address, CodeBuffer *buffer) : Assembler(address, buffer) {
   }
 
-  void Ldr(Register rt, PseudoLabel *label) {
+  void Ldr(Register rt, AssemblerPseudoLabel *label) {
     if (label->pos()) {
-      int offset = label->pos() - buffer_->buffer_size();
+      int offset = label->pos() - buffer_->GetBufferSize();
       ldr(rt, MemOperand(pc, offset));
     } else {
       // record this ldr, and fix later.
-      label->link_to(kLdrLiteral, buffer_->buffer_size());
+      label->link_to(kLdrLiteral, buffer_->GetBufferSize());
       ldr(rt, MemOperand(pc, 0));
     }
   }
@@ -333,13 +330,13 @@ public:
     bl(0);
     b(4);
     ldr(pc, MemOperand(pc, -4));
-    buffer_->Emit<int32_t>((uint32_t)(uintptr_t)function.address());
+    buffer_->Emit32((uint32_t)(uintptr_t)function.address());
   }
 
   void Move32Immeidate(Register rd, const Operand &x, Condition cond = AL) {
   }
 
-  void RelocLabelFixup(stl::unordered_map<off_t, off_t> *relocated_offset_map) {
+  void RelocLabelFixup(tinystl::unordered_map<off_t, off_t> *relocated_offset_map) {
     for (auto *data_label : data_labels_) {
       auto val = data_label->data<int32_t>();
       auto iter = relocated_offset_map->find(val);

@@ -2,7 +2,7 @@
 
 #include "dobby/common.h"
 
-#include "MemoryAllocator/AssemblerCodeBuilder.h"
+#include "MemoryAllocator/AssemblyCodeBuilder.h"
 
 #include "x86_insn_decode/x86_insn_decode.h"
 
@@ -13,4 +13,4 @@ int GenRelocateCodeFixed(void *buffer, CodeMemBlock *origin, CodeMemBlock *reloc
 void GenRelocateCodeX86Shared(void *buffer, CodeMemBlock *origin, CodeMemBlock *relocated, bool branch);
 
 int GenRelocateSingleX86Insn(addr_t curr_orig_ip, addr_t curr_relo_ip, uint8_t *buffer_cursor, AssemblerBase *assembler,
-                             CodeMemBuffer *code_buffer, x86_insn_decode_t &insn, int8_t mode);
+                             CodeBufferBase *code_buffer, x86_insn_decode_t &insn, int8_t mode);

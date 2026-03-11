@@ -30,43 +30,34 @@ class ThreadLocalStorageInterface {
 
 typedef void *ThreadHandle;
 
-struct ThreadInterface {
-  base::ThreadHandle handle;
-  int id = 0;
-  char name[256] = {0};
-  uint32_t stack_size = 4 * 1024 * 1024;
-
-  struct Delegate {
-    [[noreturn]] virtual void ThreadMain() = 0;
+class ThreadInterface {
+public:
+  class Delegate {
+  public:
+    virtual void ThreadMain() = 0;
   };
 
-  bool Create(Delegate *delegate);
+public:
+  static bool Create(Delegate *delegate, ThreadHandle *handle);
 
   static int CurrentId();
 
   static void SetName(const char *);
-
-  static void *thread_handler_wrapper(Delegate *ctx);
 };
 } // namespace base
 
-struct OSThread : base::ThreadInterface, base::ThreadInterface::Delegate {
-  OSThread(const char *name);
+class OSThread : public base::ThreadInterface, public base::ThreadInterface::Delegate {
+  base::ThreadHandle handle_;
 
-  OSThread(const char *name, uint32_t stack_size);
+  char name_[256];
+
+public:
+  OSThread(const char *name);
 
   bool Start();
 };
 
-enum MemoryPermission {
-  kNoAccess,
-  kRead = 1,
-  kWrite = 2,
-  kExecute = 4,
-  kReadWrite = kRead | kWrite,
-  kReadExecute = kRead | kExecute,
-  kReadWriteExecute = kRead | kWrite | kExecute,
-};
+enum MemoryPermission { kNoAccess, kRead, kReadWrite, kReadWriteExecute, kReadExecute };
 
 class OSMemory {
 public:
@@ -74,7 +65,7 @@ public:
 
   static void *Allocate(size_t size, MemoryPermission access);
 
-  static void *Allocate(size_t size, MemoryPermission access, void *fixed_addr);
+  static void *Allocate(size_t size, MemoryPermission access, void *fixed_address);
 
   static bool Free(void *address, size_t size);
 

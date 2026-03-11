@@ -1,12 +1,13 @@
-#pragma once
+#ifndef ARCH_ARM64_REGISTERS
+#define ARCH_ARM64_REGISTERS
 
-#include "core/arch/arm64/constants-arm64.h"
 #include "core/arch/CpuRegister.h"
+#include <cstdint>
 
 namespace zz {
 namespace arm64 {
 
-class CPURegister : RegisterBase {
+class CPURegister : public RegisterBase {
 public:
   enum RegisterType {
     kRegister_32,
@@ -30,12 +31,14 @@ public:
     kInvalid
   };
 
-  constexpr CPURegister(int code, int size, RegisterType type) : RegisterBase(code), reg_size_(size), reg_type_(type) {
+  constexpr CPURegister(int code, int size, RegisterType type) : RegisterBase(code), reg_type_(type), reg_size_(size) {
   }
 
   static constexpr CPURegister Create(int code, int size, RegisterType type) {
     return CPURegister(code, size, type);
   }
+
+  // =====
 
   static constexpr CPURegister X(int code) {
     return CPURegister(code, 64, kRegister_64);
@@ -53,9 +56,7 @@ public:
     return CPURegister(0, 0, kInvalid);
   }
 
-  bool Is(const CPURegister &reg) const {
-    return (reg.reg_id == this->reg_id);
-  }
+  // =====
 
   bool Is64Bits() const {
     return reg_size_ == 64;
@@ -69,12 +70,14 @@ public:
     return reg_type_ > kVRegister;
   }
 
+  // =====
+
   RegisterType type() const {
     return reg_type_;
   }
 
   int32_t code() const {
-    return reg_id;
+    return reg_code_;
   };
 
 private:
@@ -112,6 +115,8 @@ GENERAL_REGISTER_CODE_LIST(DEFINE_VREGISTERS)
 #undef DEFINE_REGISTER
 // clang-format on
 
+// =====
+
 constexpr Register wzr = w31;
 constexpr Register xzr = x31;
 
@@ -129,3 +134,5 @@ constexpr Register wLR = w30;
 #define X(code) CPURegister::X(code)
 #define Q(code) CPURegister::Q(code)
 #define InvalidRegister CPURegister::InvalidRegister()
+
+#endif

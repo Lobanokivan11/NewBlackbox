@@ -73,51 +73,49 @@ int ThreadInterface::CurrentId() {
 #endif
 }
 
-void *ThreadInterface::thread_handler_wrapper(Delegate *ctx) {
-  auto d = (ThreadInterface::Delegate *)ctx;
+static void *thread_handler_wrapper(void *ctx) {
+  ThreadInterface::Delegate *d = (ThreadInterface::Delegate *)ctx;
   d->ThreadMain();
   return nullptr;
 }
 
-bool ThreadInterface::Create(ThreadInterface::Delegate *delegate) {
-  pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setstacksize(&attr, 2 * 1024 * 1024);
+bool ThreadInterface::Create(ThreadInterface::Delegate *delegate, ThreadHandle *handle) {
+  thread_handle_t *handle_impl = new thread_handle_t;
 
-  auto handle_impl = new thread_handle_t();
-  auto err = pthread_create(&(handle_impl->thread), &attr, (void *(*)(void *))thread_handler_wrapper, delegate);
+  int err = 0;
+  err = pthread_create(&(handle_impl->thread), nullptr, thread_handler_wrapper, delegate);
   if (err != 0) {
     ERROR_LOG("pthread create failed");
     return false;
   }
-  this->handle = handle_impl;
   return true;
 }
 
-OSThread::OSThread(const char *in_name) {
-  strncpy(name, in_name, sizeof(name));
-}
-
-OSThread::OSThread(const char *in_name, uint32_t in_stack_size) {
-  strncpy(name, in_name, sizeof(name));
-  stack_size = in_stack_size;
+OSThread::OSThread(const char *name) {
+  strncpy(name_, name, sizeof(name_) -1);
 }
 
 bool OSThread::Start() {
-  return ThreadInterface::Create(this);
+  if (ThreadInterface::Create(this, &handle_) == false) {
+    return false;
+  }
+  return true;
 }
 
-// --- memory
-
 static int GetProtectionFromMemoryPermission(MemoryPermission access) {
-  int prot = 0;
-  if (access & MemoryPermission::kRead)
-    prot |= PROT_READ;
-  if (access & MemoryPermission::kWrite)
-    prot |= PROT_WRITE;
-  if (access & MemoryPermission::kExecute)
-    prot |= PROT_EXEC;
-  return prot;
+  switch (access) {
+  case MemoryPermission::kNoAccess:
+    return PROT_NONE;
+  case MemoryPermission::kRead:
+    return PROT_READ;
+  case MemoryPermission::kReadWrite:
+    return PROT_READ | PROT_WRITE;
+  case MemoryPermission::kReadWriteExecute:
+    return PROT_READ | PROT_WRITE | PROT_EXEC;
+  case MemoryPermission::kReadExecute:
+    return PROT_READ | PROT_EXEC;
+  }
+  UNREACHABLE();
 }
 
 int OSMemory::PageSize() {
@@ -163,7 +161,7 @@ bool OSMemory::SetPermission(void *address, size_t size, MemoryPermission access
   int prot = GetProtectionFromMemoryPermission(access);
   int ret = mprotect(address, size, prot);
   if (ret) {
-    ERROR_LOG("OSMemory::SetPermission: %s", ((const char *)strerror(errno)));
+    ERROR_LOG("OSMemory::SetPermission: %s\n", ((const char *)strerror(errno)));
   }
 
   return ret == 0;

@@ -42,7 +42,7 @@ const char *func_short_array[] = {
 };
 // clang-format on
 
-#define arm64e_pac_strip(symbol)
+#define pac_strip(symbol)
 #if defined(__APPLE__) && __arm64e__
 #if __has_feature(ptrauth_calls)
 #define pac_strip(symbol)
@@ -55,8 +55,8 @@ const char *func_short_array[] = {
   fn_ret_t fake_##name(fn_args_t);                                                                                     \
   /* __attribute__((constructor)) */ static void install_hook_##name() {                                               \
     void *sym_addr = DobbySymbolResolver(NULL, #name);                                                                 \
-    DobbyHook(sym_addr, (void *)fake_##name, (void * *)&orig_##name);                          \
-    arm64e_pac_strip(orig_##name);                                                                                            \
+    DobbyHook(sym_addr, (dobby_dummy_func_t)fake_##name, (dobby_dummy_func_t *)&orig_##name);                          \
+    pac_strip(orig_##name);                                                                                            \
     printf("install hook %s:%p:%p\n", #name, sym_addr, orig_##name);                                                   \
   }                                                                                                                    \
   fn_ret_t fake_##name(fn_args_t)
@@ -82,7 +82,6 @@ uint64_t socket_demo_client(void *ctx);
 
 __attribute__((constructor)) static void ctor() {
   logger_set_options(0, 0, 0, LOG_LEVEL_DEBUG, false, false);
-  dobby_set_near_trampoline(true);
 
   void *func = NULL;
   func_map = new std::map<void *, const char *>();
@@ -104,10 +103,11 @@ __attribute__((constructor)) static void ctor() {
       }
     }
     if (is_short) {
-      break;
+      dobby_enable_near_branch_trampoline();
+      DobbyInstrument(iter->first, common_handler);
+      dobby_disable_near_branch_trampoline();
     } else {
       DobbyInstrument(iter->first, common_handler);
-      break;
     }
   }
 

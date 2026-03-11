@@ -8,7 +8,7 @@ if (NOT DOBBY_DEBUG)
   set(linker_flags "${linker_flags} -Wl,-x -Wl,-S")
 endif ()
 
-set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fvisibility=hidden -fPIC -fno-stack-check -fno-stack-protector -fno-exceptions -fno-rtti -fno-common -fno-zero-initialized-in-bss")
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fno-rtti -fno-exceptions -fno-stack-protector")
 
 if (SYSTEM.Darwin)
   # set(compiler_flags "${compiler_flags} -nostdinc++")
@@ -40,7 +40,7 @@ if (NOT DOBBY_DEBUG)
 endif ()
 
 if (PROCESSOR.ARM)
-  set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -x assembler-with-cpp")
+  set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -arch armv7 -x assembler-with-cpp")
 elseif (PROCESSOR.AARCH64)
   set(CMAKE_ASM_FLAGS "${CMAKE_ASM_FLAGS} -arch arm64 -x assembler-with-cpp")
 endif ()

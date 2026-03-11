@@ -1,5 +1,6 @@
 
 #include "dobby/dobby_internal.h"
+#include "core/arch/Cpu.h"
 
 #include <unistd.h>
 #include <sys/mman.h>

@@ -6,14 +6,7 @@
 #include <mach-o/nlist.h>
 #include <string.h>
 
-#include <stdio.h>
-
 #define ASSERT(x)
-
-#define assert(x)                                                                                                      \
-  if (!(x)) {                                                                                                          \
-    *(int *)0x41414141 = 0;                                                                                            \
-  }
 
 uintptr_t macho_iterate_symbol_table(char *symbol_name_pattern, nlist_t *symtab, uint32_t symtab_count, char *strtab) {
   for (uint32_t i = 0; i < symtab_count; i++) {
@@ -38,14 +31,13 @@ uintptr_t macho_iterate_symbol_table(char *symbol_name_pattern, nlist_t *symtab,
 
 // ---
 
-void macho_ctx_t::init(mach_header_t *header, bool is_runtime_mode, mach_header_t *cache_header) {
+void macho_ctx_t::init(mach_header_t *header, bool is_runtime_mode) {
   memset(this, 0, sizeof(macho_ctx_t));
 
-  this->header = header;
   this->is_runtime_mode = is_runtime_mode;
-  this->cache_header = cache_header;
 
-  load_command *curr_cmd;
+  this->header = header;
+  segment_command_t *curr_seg_cmd;
   segment_command_t *text_segment = 0, *text_exec_segment = 0, *data_segment = 0, *data_const_segment = 0,
                     *linkedit_segment = 0;
   struct symtab_command *symtab_cmd = 0;
@@ -54,11 +46,9 @@ void macho_ctx_t::init(mach_header_t *header, bool is_runtime_mode, mach_header_
   struct linkedit_data_command *exports_trie_cmd = 0;
   struct linkedit_data_command *chained_fixups_cmd = NULL;
 
-  curr_cmd = (load_command *)((uintptr_t)header + sizeof(mach_header_t));
+  curr_seg_cmd = (segment_command_t *)((uintptr_t)header + sizeof(mach_header_t));
   for (int i = 0; i < header->ncmds; i++) {
-    if (curr_cmd->cmd == LC_SEGMENT_ARCH_DEPENDENT) {
-      segment_command_t *curr_seg_cmd = (segment_command_t *)curr_cmd;
-
+    if (curr_seg_cmd->cmd == LC_SEGMENT_ARCH_DEPENDENT) {
       //  BIND_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB and REBASE_OPCODE_SET_SEGMENT_AND_OFFSET_ULEB
       this->segments[this->segments_count++] = curr_seg_cmd;
 
@@ -73,51 +63,35 @@ void macho_ctx_t::init(mach_header_t *header, bool is_runtime_mode, mach_header_
       } else if (strcmp(curr_seg_cmd->segname, "__TEXT_EXEC") == 0) {
         text_exec_segment = curr_seg_cmd;
       }
-    } else if (curr_cmd->cmd == LC_SYMTAB) {
-      symtab_cmd = (struct symtab_command *)curr_cmd;
-    } else if (curr_cmd->cmd == LC_DYSYMTAB) {
-      dysymtab_cmd = (struct dysymtab_command *)curr_cmd;
-    } else if (curr_cmd->cmd == LC_DYLD_INFO || curr_cmd->cmd == LC_DYLD_INFO_ONLY) {
-      dyld_info_cmd = (struct dyld_info_command *)curr_cmd;
-    } else if (curr_cmd->cmd == LC_DYLD_EXPORTS_TRIE) {
-      exports_trie_cmd = (struct linkedit_data_command *)curr_cmd;
-    } else if (curr_cmd->cmd == LC_DYLD_CHAINED_FIXUPS) {
-      chained_fixups_cmd = (struct linkedit_data_command *)curr_cmd;
+    } else if (curr_seg_cmd->cmd == LC_SYMTAB) {
+      symtab_cmd = (struct symtab_command *)curr_seg_cmd;
+    } else if (curr_seg_cmd->cmd == LC_DYSYMTAB) {
+      dysymtab_cmd = (struct dysymtab_command *)curr_seg_cmd;
+    } else if (curr_seg_cmd->cmd == LC_DYLD_INFO || curr_seg_cmd->cmd == LC_DYLD_INFO_ONLY) {
+      dyld_info_cmd = (struct dyld_info_command *)curr_seg_cmd;
+    } else if (curr_seg_cmd->cmd == LC_DYLD_EXPORTS_TRIE) {
+      exports_trie_cmd = (struct linkedit_data_command *)curr_seg_cmd;
+    } else if (curr_seg_cmd->cmd == LC_DYLD_CHAINED_FIXUPS) {
+      chained_fixups_cmd = (struct linkedit_data_command *)curr_seg_cmd;
     }
-    curr_cmd = (load_command *)((uintptr_t)curr_cmd + curr_cmd->cmdsize);
+    curr_seg_cmd = (segment_command_t *)((uintptr_t)curr_seg_cmd + curr_seg_cmd->cmdsize);
   }
-
-  if (!text_segment)
-    return;
 
   uintptr_t slide = (uintptr_t)header - (uintptr_t)text_segment->vmaddr;
   uintptr_t linkedit_base = (uintptr_t)slide + linkedit_segment->vmaddr - linkedit_segment->fileoff;
   if (!is_runtime_mode) {
     // as mmap, all segment is close
     uintptr_t linkedit_segment_vmaddr = linkedit_segment->fileoff;
-    linkedit_base =
-        (uintptr_t)(cache_header ? cache_header : header) + linkedit_segment_vmaddr - linkedit_segment->fileoff;
+    linkedit_base = (uintptr_t)slide + linkedit_segment_vmaddr - linkedit_segment->fileoff;
   }
 
-  vm_region_start = (uintptr_t)-1;
-  vm_region_end = 0;
-  for (int i = 0; i < segments_count; i++) {
-    if (strcmp(segments[i]->segname, "__PAGEZERO") == 0) {
-      continue;
-    }
-    if (strcmp(segments[i]->segname, "__TEXT") == 0) {
-      load_vmaddr = segments[i]->vmaddr;
-    }
-
-    if (vm_region_start > segments[i]->vmaddr) {
-      vm_region_start = segments[i]->vmaddr;
-    }
-
-    if (vm_region_end < segments[i]->vmaddr + segments[i]->vmsize) {
-      vm_region_end = segments[i]->vmaddr + segments[i]->vmsize;
-    }
+  vm_region_start = segments[0]->vmaddr;
+  // skip __LINKEDIT
+  if (strcmp(segments[0]->segname, "__LINKEDIT") == 0) {
+    vm_region_start = segments[1]->vmaddr;
   }
-
+  vm_region_end = segments[segments_count - 1]->vmaddr + segments[segments_count - 1]->vmsize;
+  vmaddr = vm_region_start;
   vmsize = vm_region_end - vm_region_start;
 
   this->text_seg = text_segment;
@@ -135,47 +109,9 @@ void macho_ctx_t::init(mach_header_t *header, bool is_runtime_mode, mach_header_
   this->slide = slide;
   this->linkedit_base = linkedit_base;
 
-  if (this->symtab_cmd) {
-    this->symtab = (nlist_t *)(this->linkedit_base + this->symtab_cmd->symoff);
-    this->strtab = (char *)(this->linkedit_base + this->symtab_cmd->stroff);
-  }
-
-  if (dysymtab_cmd)
-    this->indirect_symtab = (uint32_t *)(this->linkedit_base + this->dysymtab_cmd->indirectsymoff);
-
-#if 0
-#pragma message("!!! printf used !!!")
-  printf("%p: region: %p - %p, load_vmaddr: %p, vmsize: %p, slide: %p\n", this->header, vm_region_start, vm_region_end,
-         load_vmaddr, vmsize, slide);
-#endif
-}
-
-section_t *macho_ctx_t::sect(char *seg_name, char *sect_name) {
-  load_command *curr_cmd;
-  curr_cmd = (load_command *)((uintptr_t)header + sizeof(mach_header_t));
-  for (int i = 0; i < header->ncmds; i++) {
-    if (curr_cmd->cmd == LC_SEGMENT_ARCH_DEPENDENT) {
-      segment_command_t *curr_seg_cmd = (segment_command_t *)curr_cmd;
-      if (strcmp(curr_seg_cmd->segname, seg_name) == 0) {
-        section_t *curr_sect = (section_t *)((uintptr_t)curr_seg_cmd + sizeof(segment_command_t));
-        for (int j = 0; j < curr_seg_cmd->nsects; j++) {
-          if (strcmp(curr_sect->sectname, sect_name) == 0) {
-            return curr_sect;
-          }
-          curr_sect = (section_t *)((uintptr_t)curr_sect + sizeof(section_t));
-        }
-      }
-    }
-    curr_cmd = (load_command *)((uintptr_t)curr_cmd + curr_cmd->cmdsize);
-  }
-  return 0;
-}
-
-uint8_t *macho_ctx_t::sect_content(section_t *sect) {
-  if (is_runtime_mode)
-    return (uint8_t *)sect->addr + slide;
-  else
-    return (uint8_t *)header + sect->offset;
+  this->symtab = (nlist_t *)(this->linkedit_base + this->symtab_cmd->symoff);
+  this->strtab = (char *)(this->linkedit_base + this->symtab_cmd->stroff);
+  this->indirect_symtab = (uint32_t *)(this->linkedit_base + this->dysymtab_cmd->indirectsymoff);
 }
 
 uintptr_t macho_ctx_t::iterate_symbol_table(const char *symbol_name_pattern) {

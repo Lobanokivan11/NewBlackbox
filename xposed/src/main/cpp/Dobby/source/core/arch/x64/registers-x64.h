@@ -2,7 +2,7 @@
 #define ARCH_X64_REGISTERS
 
 #include "core/arch/x64/constants-x64.h"
-#include "core/arch/CpuRegister.h"
+#include "core/arch/Cpu.h"
 
 namespace zz {
 namespace x64 {
@@ -79,7 +79,7 @@ class CPURegister : public RegisterBase {
 public:
   enum RegisterType { kDefault, kInvalid };
 
-  constexpr CPURegister(int code, int size, RegisterType type) : RegisterBase(code), reg_size_(size), reg_type_(type) {
+  constexpr CPURegister(int code, int size, RegisterType type) : RegisterBase(code), reg_type_(type), reg_size_(size) {
   }
 
   static constexpr CPURegister Create(int code, int size, RegisterType type) {
@@ -104,19 +104,19 @@ public:
 
 public:
   bool is_byte_register() const {
-    return reg_id <= 3;
+    return reg_code_ <= 3;
   }
 
   // Return the high bit of the register code as a 0 or 1.  Used often
   // when constructing the REX prefix byte.
   int high_bit() const {
-    return reg_id >> 3;
+    return reg_code_ >> 3;
   }
 
   // Return the 3 low bits of the register code.  Used when encoding registers
   // in modR/M, SIB, and opcode bytes.
   int low_bits() const {
-    return reg_id & 0x7;
+    return reg_code_ & 0x7;
   }
 
   int size() {
@@ -215,12 +215,12 @@ public:
   // Return the high bit of the register code as a 0 or 1.  Used often
   // when constructing the REX prefix byte.
   int high_bit() const {
-    return reg_id >> 3;
+    return reg_code_ >> 3;
   }
   // Return the 3 low bits of the register code.  Used when encoding registers
   // in modR/M, SIB, and opcode bytes.
   int low_bits() const {
-    return reg_id & 0x7;
+    return reg_code_ & 0x7;
   }
 
 private:

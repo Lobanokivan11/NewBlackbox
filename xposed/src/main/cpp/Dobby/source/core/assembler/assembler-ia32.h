@@ -232,26 +232,26 @@ public:
   }
   ~Assembler() {
     if (buffer_)
-      delete buffer_;
+      buffer_->CodeBuffer::~CodeBuffer();
     buffer_ = NULL;
   }
 
 public:
   void Emit1(byte_t val) {
-    buffer_->Emit<int8_t>(val);
+    buffer_->Emit8(val);
   }
 
   void Emit(int32_t value) {
-    buffer_->Emit<int32_t>(value);
+    buffer_->Emit32(value);
   }
 
   // ---
 
   void EmitImmediate(Immediate imm, int imm_size) {
     if (imm_size == 8) {
-      buffer_->Emit<int8_t>((uint8_t)imm.value());
+      buffer_->Emit8((uint8_t)imm.value());
     } else if (imm_size == 32) {
-      buffer_->Emit<int32_t>((uint32_t)imm.value());
+      buffer_->Emit32((uint32_t)imm.value());
     } else {
       UNREACHABLE();
     }
@@ -439,7 +439,7 @@ public:
     MovRipToRegister(VOLATILE_REGISTER);
     call(Address(VOLATILE_REGISTER, INT32_MAX));
     {
-      auto label = RelocDataLabel::withData(function.address());
+      auto label = RelocLabel::withData(function.address());
       label->link_to(kDisp32_off_7, ip_offset());
       AppendRelocLabel(label);
     }
