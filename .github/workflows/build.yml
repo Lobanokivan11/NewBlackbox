@@ -1,0 +1,71 @@
+name: Build APK
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up JDK 21
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Accept Android SDK licenses
+        run: yes | $ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager --licenses || yes | $ANDROID_HOME/tools/bin/sdkmanager --licenses || true
+
+      - name: Grant execute permission for gradlew
+        run: chmod +x ./gradlew
+
+      - name: Build Debug APK
+        run: ./gradlew assembleDebug
+
+      - name: Build Release APK
+        run: ./gradlew assembleRelease
+
+      - name: Build Bcore AAR
+        run: ./gradlew :Bcore:assembleRelease
+
+      - name: Build Bcore Debug AAR
+        run: ./gradlew :Bcore:assembleDebug
+
+      - name: Find Bcore AAR path
+        id: aar_path
+        run: |
+          AAR=$(find ./Bcore/build/outputs/aar -name "*.aar" | head -n 1)
+          ls -laAR $AAR
+          echo "aar_path=$AAR" >> $GITHUB_OUTPUT
+
+      - name: Find Bcore AAR paths
+        id: aar_paths
+        run: |
+          DEBUG_AAR=$(find ./Bcore/build/outputs/aar -name "*debug.aar" | head -n 1)
+          RELEASE_AAR=$(find ./Bcore/build/outputs/aar -name "*release.aar" | head -n 1)
+          ls -laAR $DEBUG_AAR
+          ls -laAR $RELEASE_AAR
+          echo "debug_aar_path=$DEBUG_AAR" >> $GITHUB_OUTPUT
+          echo "release_aar_path=$RELEASE_AAR" >> $GITHUB_OUTPUT
+
+      - name: Find APK paths
+        id: apk_paths
+        run: |
+          DEBUG_APK=$(find ./app/build/outputs/apk/debug -name "*.apk" | head -n 1)
+          RELEASE_APK=$(find ./app/build/outputs/apk/release -name "*.apk" | head -n 1)
+          ls -laAR $RELEASE_APK
+          ls -laAR $DEBUG_APK
+          echo "debug_apk_path=$DEBUG_APK" >> $GITHUB_OUTPUT
+          echo "release_apk_path=$RELEASE_APK" >> $GITHUB_OUTPUT
