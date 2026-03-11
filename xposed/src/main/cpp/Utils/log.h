@@ -1,7 +1,7 @@
-#include <android/log.h>
-
 #ifndef XPOSED_LOG_H
 #define XPOSED_LOG_H
+
+#include <android/log.h>
 
 enum logType {
     DEBUG = 3,
