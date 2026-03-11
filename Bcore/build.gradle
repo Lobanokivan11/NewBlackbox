@@ -84,7 +84,7 @@ dependencies {
     annotationProcessor(project(":compiler"))
     implementation 'androidx.appcompat:appcompat:1.2.0'
     implementation 'com.moandjiezana.toml:toml4j:0.7.2'
-    implementation(project(':xposed'))
+    api project(':xposed')
     implementation 'com.github.tiann:FreeReflection:3.2.2'
 
 
