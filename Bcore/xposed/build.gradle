@@ -4,7 +4,7 @@ plugins {
 
 android {
     compileSdk rootProject.ext.compileSdkVersion
-    ndkVersion rootProject.ext.ndkVersion
+    ndkVersion = "29.0.13846066"
 
     defaultConfig {
         minSdk rootProject.ext.minSdk
