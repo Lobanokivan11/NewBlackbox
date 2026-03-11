@@ -85,7 +85,7 @@ import top.niunaijun.blackbox.utils.compat.BuildCompat;
 import top.niunaijun.blackbox.utils.compat.ContextCompat;
 import top.niunaijun.blackbox.utils.compat.StrictModeCompat;
 import top.niunaijun.blackbox.core.system.JarManager;
-
+import top.niunaijun.blackbox.utils.XposedErrorLogger;
 
 public class BActivityThread extends IBActivityThread.Stub {
     public static final String TAG = "BActivityThread";
@@ -1035,18 +1035,17 @@ public class BActivityThread extends IBActivityThread.Stub {
                     continue;
                 }
                 try {
-                    // Remove all PineXposed.loadModule and PineXposed.onPackageLoad calls
+                    XposedInit.loadModule(installedModule.getApplication().sourceDir, context.getClassLoader());
                 } catch (Throwable e) {
                     String msg = "Failed to load Xposed module: " + installedModule.getApplication().packageName
                                + " (" + installedModule.getApplication().sourceDir + ")\n"
                                + android.util.Log.getStackTraceString(e);
                     android.util.Log.e("BlackBoxXposed", msg);
-                    // Optionally, collect errors for UI display
-                    // XposedErrorLogger.logModuleError(installedModule.getApplication().packageName, msg);
+                    XposedErrorLogger.logModuleError(installedModule.getApplication().packageName, msg);
                 }
             }
             try {
-                // Remove all PineXposed.onPackageLoad calls
+                XposedInit.onPackageLoad(vPackageName, vProcessName, context.getApplicationInfo(), isFirstApplication, context.getClassLoader());
             } catch (Throwable ignored) {
             }
         }
