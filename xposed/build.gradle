@@ -7,7 +7,7 @@ plugins {
 android {
     compileSdk rootProject.ext.compileSdkVersion
     ndkVersion = "29.0.13846066"
-
+    namespace 'de.robv.android.xposed'
     defaultConfig {
         minSdk rootProject.ext.minSdk
         targetSdk rootProject.ext.targetSdkVersion
