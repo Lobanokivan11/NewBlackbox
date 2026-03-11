@@ -11,14 +11,14 @@ void *inlineHooker(void *targetFunc, void *replaceFunc) {
     mprotect((void *) funcAddress, pageSize, PROT_READ | PROT_WRITE | PROT_EXEC);
 
     void *originalFunc;
-    if (DobbyHook(targetFunc, (dobby_dummy_func_t) replaceFunc, (dobby_dummy_func_t *) &originalFunc) == RS_SUCCESS) {
+    if (DobbyHook(targetFunc, (dobby_dummy_func_t) replaceFunc, (dobby_dummy_func_t *) &originalFunc) == 0) {
         return originalFunc;
     }
     return nullptr;
 }
 
 bool inlineUnHooker(void *originalFunc) {
-    return DobbyDestroy(originalFunc) == RT_SUCCESS;
+    return DobbyDestroy(originalFunc) == 0;
 }
 
 extern "C"
