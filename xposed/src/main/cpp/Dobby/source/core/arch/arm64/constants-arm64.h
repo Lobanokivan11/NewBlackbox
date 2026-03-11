@@ -1,7 +1,6 @@
-#ifndef CORE_ARCH_CONSTANTS_ARM64_H
-#define CORE_ARCH_CONSTANTS_ARM64_H
+#pragma once
 
-#include "common_header.h"
+#include "dobby/common.h"
 
 enum Shift { NO_SHIFT = -1, LSL = 0x0, LSR = 0x1, ASR = 0x2, ROR = 0x3, MSL = 0x4 };
 
@@ -248,15 +247,8 @@ enum LoadStorePairPreIndexOp {
 #undef LOAD_STORE_PAIR_PRE_INDEX
 };
 
-// =====
-
 // Generic fields.
-enum GenericInstrField { SixtyFourBits = 0x80000000, ThirtyTwoBits = 0x00000000, FP32 = 0x00000000, FP64 = 0x00400000 };
-
-// Generic utils
-// #define sf(rd) (rd.Is64Bits() ? SixtyFourBits : ThirtyTwoBits)
-
-// =====
+enum GenericInstrField { SixtyFourBits = 0x80000000 };
 
 // Move wide immediate.
 enum MoveWideImmediateOp {
@@ -276,8 +268,6 @@ enum MoveWideImmediateOp {
   OP_W(MOVK) = MoveWideImmediateFixed | MOVK,
   OP_X(MOVK) = MoveWideImmediateFixed | MOVK | SixtyFourBits
 };
-
-// =====
 
 enum AddSubImmediateOp {
   AddSubImmediateFixed = 0x11000000,
@@ -330,8 +320,6 @@ enum AddSubExtendedOp {
   OPT_X(SUBS, extend) = AddSubExtendedOpSub(1, 1, 1)
 };
 
-// =====
-
 // Logical (immediate and shifted register).
 enum LogicalOp {
   LogicalOpMask = 0x60200000,
@@ -383,5 +371,3 @@ enum PCRelAddressingOp {
   ADR = PCRelAddressingFixed | 0x00000000,
   ADRP = PCRelAddressingFixed | 0x80000000
 };
-
-#endif

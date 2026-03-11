@@ -1,17 +1,18 @@
 include_directories(.)
 
-if(NOT BUILDING_KERNEL)
-  set(SOURCE_FILE_LIST
-    ${CMAKE_CURRENT_SOURCE_DIR}/cxxlogging.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/logging.c
+set(SOURCE_FILE_LIST
+  logging.cc
   )
-else()
+
+if (DOBBY_BUILD_KERNEL_MODE)
   set(SOURCE_FILE_LIST
-    ${CMAKE_CURRENT_SOURCE_DIR}/cxxlogging.cc
-    ${CMAKE_CURRENT_SOURCE_DIR}/kernel_logging.c
+    logging_kern.cc
     )
-endif()
+endif ()
+
+get_absolute_path_list(SOURCE_FILE_LIST SOURCE_FILE_LIST_)
+set(SOURCE_FILE_LIST ${SOURCE_FILE_LIST_})
+
 add_library(logging
   ${SOURCE_FILE_LIST}
-  ${SOURCE_HEADER_LIST}
-)
+  )

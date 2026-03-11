@@ -2,10 +2,9 @@
 
 #include <windows.h>
 
-
 #include "logging/logging.h"
 #include "logging/check_logging.h"
-#include "UnifiedInterface/platform.h"
+#include "PlatformUnifiedInterface/platform.h"
 
 int GetProtectionFromMemoryPermission(MemoryPermission access) {
   if (kReadWriteExecute == access)

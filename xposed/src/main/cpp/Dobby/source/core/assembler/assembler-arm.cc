@@ -1,17 +1,17 @@
-#include "platform_macro.h"
+#include "platform_detect_macro.h"
 #if TARGET_ARCH_ARM
 
 #include "core/assembler/assembler-arm.h"
 
-void AssemblerPseudoLabel::link_confused_instructions(CodeBufferBase *buffer) {
+void PseudoLabel::link_confused_instructions(CodeMemBuffer *buffer) {
   CodeBuffer *_buffer = (CodeBuffer *)buffer;
 
-  for (auto &ref_label_inst : ref_label_insts_) {
-    arm_inst_t inst = _buffer->LoadARMInst(ref_label_inst.offset_);
-    if (ref_label_inst.type_ == kLdrLiteral) {
-      int64_t pc = ref_label_inst.offset_ + ARM_PC_OFFSET;
+  for (auto &ref_label_insn : ref_insts) {
+    arm_inst_t inst = _buffer->LoadARMInst(ref_label_insn.pc_offset);
+    if (ref_label_insn.link_type == kLdrLiteral) {
+      int64_t pc = ref_label_insn.pc_offset + ARM_PC_OFFSET;
       assert(pc % 4 == 0);
-      int32_t imm12 = relocated_pos() - pc;
+      int32_t imm12 = pos() - pc;
       if (imm12 > 0) {
         set_bit(inst, 23, 1);
       } else {
@@ -20,7 +20,7 @@ void AssemblerPseudoLabel::link_confused_instructions(CodeBufferBase *buffer) {
       }
       set_bits(inst, 0, 11, imm12);
     }
-    _buffer->RewriteARMInst(ref_label_inst.offset_, inst);
+    _buffer->RewriteARMInst(ref_label_insn.pc_offset, inst);
   }
 }
 
@@ -32,7 +32,7 @@ void Assembler::EmitARMInst(arm_inst_t instr) {
 }
 
 void Assembler::EmitAddress(uint32_t value) {
-  buffer_->Emit32(value);
+  buffer_->Emit<int32_t>(value);
 }
 
 } // namespace arm

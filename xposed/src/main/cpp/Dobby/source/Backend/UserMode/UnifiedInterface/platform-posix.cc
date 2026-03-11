@@ -24,7 +24,7 @@
 
 #include "logging/logging.h"
 #include "logging/check_logging.h"
-#include "UnifiedInterface/platform.h"
+#include "PlatformUnifiedInterface/platform.h"
 
 #if defined(__APPLE__)
 #include <dlfcn.h>
@@ -48,9 +48,6 @@ const int kMmapFd = -1;
 #endif
 
 const int kMmapFdOffset = 0;
-
-// ================================================================
-// base :: Thread
 
 using namespace base;
 
@@ -76,51 +73,51 @@ int ThreadInterface::CurrentId() {
 #endif
 }
 
-static void *thread_handler_wrapper(void *ctx) {
-  ThreadInterface::Delegate *d = (ThreadInterface::Delegate *)ctx;
+void *ThreadInterface::thread_handler_wrapper(Delegate *ctx) {
+  auto d = (ThreadInterface::Delegate *)ctx;
   d->ThreadMain();
   return nullptr;
 }
 
-bool ThreadInterface::Create(ThreadInterface::Delegate *delegate, ThreadHandle *handle) {
-  thread_handle_t *handle_impl = new thread_handle_t;
+bool ThreadInterface::Create(ThreadInterface::Delegate *delegate) {
+  pthread_attr_t attr;
+  pthread_attr_init(&attr);
+  pthread_attr_setstacksize(&attr, 2 * 1024 * 1024);
 
-  int err = 0;
-  err = pthread_create(&(handle_impl->thread), nullptr, thread_handler_wrapper, delegate);
+  auto handle_impl = new thread_handle_t();
+  auto err = pthread_create(&(handle_impl->thread), &attr, (void *(*)(void *))thread_handler_wrapper, delegate);
   if (err != 0) {
-    FATAL("pthread create failed");
+    ERROR_LOG("pthread create failed");
     return false;
   }
+  this->handle = handle_impl;
   return true;
 }
 
-Thread::Thread(const char *name) {
-  strncpy(name_, name, sizeof(name_));
+OSThread::OSThread(const char *in_name) {
+  strncpy(name, in_name, sizeof(name));
 }
 
-bool Thread::Start() {
-  if (ThreadInterface::Create(this, &handle_) == false) {
-    return false;
-  }
-  return true;
+OSThread::OSThread(const char *in_name, uint32_t in_stack_size) {
+  strncpy(name, in_name, sizeof(name));
+  stack_size = in_stack_size;
 }
 
-// --- OSMemory
+bool OSThread::Start() {
+  return ThreadInterface::Create(this);
+}
+
+// --- memory
 
 static int GetProtectionFromMemoryPermission(MemoryPermission access) {
-  switch (access) {
-  case MemoryPermission::kNoAccess:
-    return PROT_NONE;
-  case MemoryPermission::kRead:
-    return PROT_READ;
-  case MemoryPermission::kReadWrite:
-    return PROT_READ | PROT_WRITE;
-  case MemoryPermission::kReadWriteExecute:
-    return PROT_READ | PROT_WRITE | PROT_EXEC;
-  case MemoryPermission::kReadExecute:
-    return PROT_READ | PROT_EXEC;
-  }
-  UNREACHABLE();
+  int prot = 0;
+  if (access & MemoryPermission::kRead)
+    prot |= PROT_READ;
+  if (access & MemoryPermission::kWrite)
+    prot |= PROT_WRITE;
+  if (access & MemoryPermission::kExecute)
+    prot |= PROT_EXEC;
+  return prot;
 }
 
 int OSMemory::PageSize() {
@@ -166,13 +163,11 @@ bool OSMemory::SetPermission(void *address, size_t size, MemoryPermission access
   int prot = GetProtectionFromMemoryPermission(access);
   int ret = mprotect(address, size, prot);
   if (ret) {
-    ERROR_LOG("OSMemory::SetPermission: %s\n", ((const char *)strerror(errno)));
+    ERROR_LOG("OSMemory::SetPermission: %s", ((const char *)strerror(errno)));
   }
 
   return ret == 0;
 }
-
-// --- OSPrint
 
 void OSPrint::Print(const char *format, ...) {
   va_list args;
@@ -186,20 +181,5 @@ void OSPrint::VPrint(const char *format, va_list args) {
   __android_log_vprint(ANDROID_LOG_INFO, ANDROID_LOG_TAG, format, args);
 #else
   vprintf(format, args);
-#endif
-}
-
-void OSPrint::PrintError(const char *format, ...) {
-  va_list args;
-  va_start(args, format);
-  VPrintError(format, args);
-  va_end(args);
-}
-
-void OSPrint::VPrintError(const char *format, va_list args) {
-#if defined(ANDROID) && !defined(ANDROID_LOG_STDOUT)
-  __android_log_vprint(ANDROID_LOG_ERROR, LOG_TAG, format, args);
-#else
-  vfprintf(stderr, format, args);
 #endif
 }
