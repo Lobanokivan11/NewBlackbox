@@ -51,7 +51,6 @@ jobs:
         run: |
           AAR=$(find ./Bcore/build/outputs/aar -name "*.aar" | head -n 1)
           ls -laAR $AAR
-          echo "aar_path=$AAR" >> $GITHUB_OUTPUT
 
       - name: Find Bcore AAR paths
         id: aar_paths
@@ -60,8 +59,6 @@ jobs:
           RELEASE_AAR=$(find ./Bcore/build/outputs/aar -name "*release.aar" | head -n 1)
           ls -laAR $DEBUG_AAR
           ls -laAR $RELEASE_AAR
-          echo "debug_aar_path=$DEBUG_AAR" >> $GITHUB_OUTPUT
-          echo "release_aar_path=$RELEASE_AAR" >> $GITHUB_OUTPUT
 
       - name: Find APK paths
         id: apk_paths
@@ -70,5 +67,15 @@ jobs:
           RELEASE_APK=$(find ./app/build/outputs/apk/release -name "*.apk" | head -n 1)
           ls -laAR $RELEASE_APK
           ls -laAR $DEBUG_APK
-          echo "debug_apk_path=$DEBUG_APK" >> $GITHUB_OUTPUT
-          echo "release_apk_path=$RELEASE_APK" >> $GITHUB_OUTPUT
+
+      - name: NIGHTLY BUILDS
+        uses: softprops/action-gh-release@v1
+        with:
+          body: NIGHTLY BUILDS OF BLACKBOX
+          tag_name: github_run
+          name: NIGHTLY BUILDS
+          files: |
+             Bcore/build/outputs/aar/Bcore-release.aar
+             Bcore/build/outputs/aar/Bcore-debug.aar
+             app/build/outputs/apk/debug/*.apk
+             app/build/outputs/apk/release/*.apk
