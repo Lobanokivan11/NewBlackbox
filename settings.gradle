@@ -16,12 +16,6 @@ pluginManagement {
         }
         mavenCentral()
         gradlePluginPortal()
-        maven {
-            url = uri('${projectDir}/localrepo')
-            content {
-                includeGroup("org.lsposed.lsplant")
-            }
-        }
     }
 }
 dependencyResolutionManagement {
@@ -36,12 +30,6 @@ dependencyResolutionManagement {
         maven { url 'https://maven.aliyun.com' }
         google()
         mavenCentral()
-        maven {
-            url = uri('${projectDir}/localrepo')
-            content {
-                includeGroup("org.lsposed.lsplant")
-            }
-        }
     }
 }
 
