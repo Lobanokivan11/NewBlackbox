@@ -25,7 +25,8 @@
 -keep class mirror.** {*; }
 -keep class android.** {*; }
 -keep class com.android.** {*; }
-
+-keep class de.robv.android.xposed.** { *; }
+-dontwarn de.robv.android.xposed.**
 -keep class top.niunaijun.blackreflection.** {*; }
 -keep @top.niunaijun.blackreflection.annotation.BClass class * {*;}
 -keep @top.niunaijun.blackreflection.annotation.BClassName class * {*;}
