@@ -76,5 +76,5 @@ tasks.withType(Javadoc) {
 }
 
 dependencies {
-    implementation 'com.github.LSPosed:LSPlant:master-SNAPSHOT'
+    implementation 'org.lsposed.lsplant:lsplant-standalone:6.4'
 }
