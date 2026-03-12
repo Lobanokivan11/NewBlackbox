@@ -34,7 +34,10 @@ jobs:
       - name: Grant execute permission for gradlew
         run: chmod +x ./gradlew
 
-
+      - name: Create gradle.properties
+        run: |
+          echo "github.user=${{ secrets.USERNAME }}" >> gradle.properties
+          echo "github.token=${{ secrets.TOKEN }}" >> gradle.properties
 
       - name: Cache Gradle
         uses: burrunan/gradle-cache-action@v3
