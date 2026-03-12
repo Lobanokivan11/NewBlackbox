@@ -76,5 +76,5 @@ tasks.withType(Javadoc) {
 }
 
 dependencies {
-    implementation 'com.github.LSPosed:LSPlant:36e3f80'
+    implementation 'com.github.LSPosed:LSPlant:master-SNAPSHOT'
 }
