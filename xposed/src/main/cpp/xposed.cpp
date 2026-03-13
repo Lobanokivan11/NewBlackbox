@@ -48,7 +48,7 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-    LSPosed::ElfImg art(getArtPath().c_2str());
+    LSPosed::ElfImg art(getArtPath().c_str());
     lsplant::InitInfo initInfo {
             .inline_hooker = inlineHooker,
             .inline_unhooker = inlineUnHooker,
