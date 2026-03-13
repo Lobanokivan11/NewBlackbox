@@ -49,7 +49,7 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_ERR;
     }
     LSPosed::ElfImg art(getArtPath().c_str());
-    if (art.base == nullptr) {
+    if (art.get_module_base() == nullptr) {
             return JNI_ERR;
     }
     lsplant::InitInfo initInfo {
@@ -62,9 +62,9 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
                 return art.getSymbPrefixFirstOffset(symbol);
             },
             .generated_class_name = "org/lsposed/lsplant/GeneratedStub",
-            .generated_method_name = "hookStub",
-            .generated_source_name = "LSPlant"
+            .generated_source_name = "LSPlant",
+            .generated_method_name = "hookStub"
     };
-    lsplant::Init(env, initInfo);
+    (void)lsplant::Init(env, initInfo);
     return JNI_VERSION_1_6;
 }
