@@ -49,7 +49,7 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_ERR;
     }
     LSPosed::ElfImg art(getArtPath().c_str());
-    if (art.getMap() == nullptr) {
+    if (art.getBase() == nullptr) {
             return JNI_ERR;
     }
     lsplant::InitInfo initInfo {
