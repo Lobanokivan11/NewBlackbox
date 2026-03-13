@@ -13,7 +13,7 @@ namespace LSPosed {
     class ElfImg {
     public:
         ElfImg(std::string_view elf);
-
+        bool isValid() const { return base != nullptr; }
         template<typename T = void*>
         requires(std::is_pointer_v<T>)
         constexpr const T getSymbAddress(std::string_view name) const {
