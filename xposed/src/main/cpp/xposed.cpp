@@ -50,6 +50,9 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             .art_symbol_prefix_resolver = [&art](auto symbol) {
                 return art.getSymbPrefixFirstOffset(symbol);
             },
+            .generated_class_name = "org/lsposed/lsplant/GeneratedStub",
+            .generated_method_name = "hookStub",
+            .generated_source_name = "LSPlant"
     };
     lsplant::Init(env, initInfo);
     return JNI_VERSION_1_6;
