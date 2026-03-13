@@ -49,6 +49,9 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
         return JNI_ERR;
     }
     LSPosed::ElfImg art(getArtPath().c_str());
+    if (art.getMap() == nullptr) {
+            return JNI_ERR;
+    }
     lsplant::InitInfo initInfo {
             .inline_hooker = inlineHooker,
             .inline_unhooker = inlineUnHooker,
