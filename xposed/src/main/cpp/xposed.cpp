@@ -4,6 +4,7 @@
 #include <sys/sysconf.h>
 #include <sys/mman.h>
 #include "Utils/elf_util.h"
+#include <string>
 
 void *inlineHooker(void *targetFunc, void *replaceFunc) {
     auto pageSize = sysconf(_SC_PAGE_SIZE);
@@ -39,8 +40,13 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-
-    LSPosed::ElfImg art("libart.so");
+    std::string getArtPath() {
+            if (sizeof(void*) == 8) {
+                return "/apex/com.android.art/lib64/libart.so";
+            } else {
+                return "/apex/com.android.art/lib/libart.so";
+            }   
+    LSPosed::ElfImg art(getArtPath().c_str());
     lsplant::InitInfo initInfo {
             .inline_hooker = inlineHooker,
             .inline_unhooker = inlineUnHooker,
