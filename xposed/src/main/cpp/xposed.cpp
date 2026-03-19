@@ -5,6 +5,8 @@
 #include <sys/mman.h>
 #include "Utils/elf_util.h"
 #include <string>
+#include <functional>
+#include <string_view>
 
 void *inlineHooker(void *targetFunc, void *replaceFunc) {
     auto pageSize = sysconf(_SC_PAGE_SIZE);
