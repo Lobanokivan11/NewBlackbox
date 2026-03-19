@@ -14,7 +14,6 @@ project("xposed")
 # You can define multiple libraries, and CMake builds them for you.
 # Gradle automatically packages shared libraries with your APK.
 
-set(CMAKE_CXX_STANDARD 17)
 set(DobbyHome Dobby)
 include_directories(
         ${DobbyHome}/include
