@@ -76,5 +76,5 @@ tasks.withType(Javadoc) {
 }
 
 dependencies {
-    implementation 'org.lsposed.lsplant:lsplant-standalone:5.0'
+    implementation 'org.lsposed.lsplant:lsplant-standalone:6.4'
 }
