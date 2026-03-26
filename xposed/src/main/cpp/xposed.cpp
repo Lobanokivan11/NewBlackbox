@@ -4,6 +4,7 @@
 #include <sys/sysconf.h>
 #include <sys/mman.h>
 #include "Utils/elf_util.h"
+#include "Utils/log.h"
 #include <string>
 #include <functional>
 #include <string_view>
@@ -58,10 +59,22 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             .inline_hooker = inlineHooker,
             .inline_unhooker = inlineUnHooker,
             .art_symbol_resolver = [&art](std::string_view symbol) -> void *{
-                return art.getSymbAddress(symbol);
+                void* addr = art.getSymbAddress(symbol.data());
+                if (!addr) {
+                    LOGE("Symbol not found: %s", symbol.data());
+                } else {
+                    LOGD("Symbol found: %s at %p", symbol.data(), addr);
+                }
+                return addr;
             },
             .art_symbol_prefix_resolver = [&art](auto symbol) {
-                return art.getSymbPrefixFirstOffset(symbol);
+                void* addr = art.getSymbPrefixFirstOffset(symbol);
+                if (!addr) {
+                    LOGE("Prefix symbol not found: %s", symbol);
+                } else {
+                    LOGD("Prefix symbol found: %s at %p", symbol, addr);
+                }
+                return addr;
             },
             .generated_class_name = "org/lsposed/lsplant/GeneratedStub",
             .generated_source_name = "LSPlant",
