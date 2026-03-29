@@ -13,11 +13,16 @@ import android.content.pm.PackageParser;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
+import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Binder;
+import android.content.pm.PackageParser.SigningDetails;
 import android.os.RemoteException;
 import android.text.TextUtils;
+import android.util.Log;
 
+import java.util.Objects;
+import java.util.Optional;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -45,6 +50,7 @@ import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.Slog;
 import top.niunaijun.blackbox.utils.compat.PackageParserCompat;
 import top.niunaijun.blackbox.utils.compat.XposedParserCompat;
+import top.niunaijun.blackreflection.BlackReflection;
 
 import static android.content.pm.PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
 
