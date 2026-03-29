@@ -46,6 +46,9 @@ public interface PackageParser {
 
     @BClassName("android.content.pm.PackageParser$SigningDetails")
     interface SigningDetails {
+        @BConstructor
+        Object _new(Signature[] signatures, int installRequirementType, Signature[] pastSigningCertificates, int[] flags);
+
         @BField
         Signature[] pastSigningCertificates();
 
