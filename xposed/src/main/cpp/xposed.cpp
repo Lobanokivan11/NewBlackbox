@@ -60,9 +60,15 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-    static LSPosed::ElfImg art(getArtPath().c_str());
+    std::string artPath = getArtPath();
+    if (artPath.empty()) {
+        LOGE("libart.so path not found!");
+        return JNI_ERR;
+    }
+    LOGD("Loading ART from: %s", artPath.c_str());
+    static LSPosed::ElfImg art(artPath.c_str());
     if (!art.isValid()) {
-        LOGE("Failed to load libart.so via ElfImg");
+        LOGE("Failed to load libart.so: %s", artPath.c_str());
         return JNI_ERR;
     }
     lsplant::InitInfo initInfo {
@@ -91,6 +97,10 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             .generated_source_name = "LSPlant",
             .generated_method_name = "hookStub"
     };
-    (void)lsplant::Init(env, initInfo);
+    if (!lsplant::Init(env, initInfo)) {
+        LOGE("LSPlant core initialization failed!");
+        return JNI_ERR;
+    }
+    LOGI("LSPlant initialized successfully on %s", artPath.c_str());
     return JNI_VERSION_1_6;
 }
