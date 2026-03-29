@@ -13,16 +13,11 @@ import android.content.pm.PackageParser;
 import android.content.pm.ProviderInfo;
 import android.content.pm.ResolveInfo;
 import android.content.pm.ServiceInfo;
-import android.content.pm.Signature;
 import android.net.Uri;
 import android.os.Binder;
-import android.content.pm.PackageParser.SigningDetails;
 import android.os.RemoteException;
 import android.text.TextUtils;
-import android.util.Log;
 
-import java.util.Objects;
-import java.util.Optional;
 import java.io.File;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -50,7 +45,6 @@ import top.niunaijun.blackbox.utils.FileUtils;
 import top.niunaijun.blackbox.utils.Slog;
 import top.niunaijun.blackbox.utils.compat.PackageParserCompat;
 import top.niunaijun.blackbox.utils.compat.XposedParserCompat;
-import top.niunaijun.blackreflection.BlackReflection;
 
 import static android.content.pm.PackageManager.MATCH_DIRECT_BOOT_UNAWARE;
 
@@ -288,64 +282,9 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
             ps = mPackages.get(packageName);
         }
         if (ps != null) {
-            PackageInfo packageInfo = PackageManagerCompat.generatePackageInfo(ps, flags, ps.readUserState(userId), userId);
-            if (packageInfo != null) {
-                boolean needSignatures = (flags & android.content.pm.PackageManager.GET_SIGNATURES) != 0 
-                    || (flags & android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES) != 0;
-                if (needSignatures) {
-                    generateFakeSignature(packageName).ifPresent(fakeSignature -> {
-                        packageInfo.signatures = new Signature[]{fakeSignature};
-                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
-                            try {
-                                SigningDetails signingDetails = new SigningDetails(
-                                    packageInfo.signatures,
-                                    2,
-                                    null,
-                                    null
-                                );
-                                black.android.content.pm.PackageParser.SigningDetails brDetails = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.PackageParser.SigningDetails.class, null, false);
-                                Object fakeDetails = brDetails._new(packageInfo.signatures, 2, null, null);
-                                black.android.content.pm.SigningInfo brSigningInfo = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.SigningInfo.class, null, false);
-                                packageInfo.signingInfo = brSigningInfo._new((android.content.pm.PackageParser.SigningDetails) fakeDetails);
-                            } catch (Exception e) {
-                                Log.e("BPM", "Failed to fake SigningInfo for " + packageName, e);
-                            }
-                        }
-                    });
-                }
-            }
-            return packageInfo;
+            return PackageManagerCompat.generatePackageInfo(ps, flags, ps.readUserState(userId), userId);
         }
         return null;
-    }
-
-    private Optional<Signature> generateFakeSignature(String packageName) {
-        BPackageSettings ps;
-        synchronized (mPackages) {
-            ps = mPackages.get(packageName);
-        }
-        if (ps == null || ps.pkg == null || ps.pkg.mAppMetaData == null) {
-            return Optional.empty();
-        }
-        String hexSignature = ps.pkg.mAppMetaData.getString("fake-signature");
-        if (hexSignature == null || hexSignature.isEmpty()) {
-            return Optional.empty();
-        }
-        try {
-            return Optional.of(new Signature(decodeHex(hexSignature)));
-        } catch (Exception e) {
-            return Optional.empty();
-        }
-    }
-
-    private byte[] decodeHex(String s) {
-        int len = s.length();
-        byte[] data = new byte[len / 2];
-        for (int i = 0; i < len; i += 2) {
-            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
-                                  + Character.digit(s.charAt(i+1), 16));
-        }
-        return data;
     }
 
     @Override
