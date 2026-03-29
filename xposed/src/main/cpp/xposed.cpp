@@ -51,18 +51,16 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) {
         return JNI_ERR;
     }
-    LSPosed::ElfImg art(getArtPath().c_str());
+    static LSPosed::ElfImg art(getArtPath().c_str());
     if (!art.isValid()) {
-            return JNI_ERR;
+        LOGE("Failed to load libart.so via ElfImg");
+        return JNI_ERR;
     }
     lsplant::InitInfo initInfo {
             .inline_hooker = inlineHooker,
             .inline_unhooker = inlineUnHooker,
-            .art_symbol_resolver = [&art](std::string_view symbol) -> void * {
+            .art_symbol_resolver = [](std::string_view symbol) -> void * {
                 void* addr = art.getSymbAddress(symbol.data());
-                if (!addr) {
-                    addr = DobbySymbolResolver(getArtPath().c_str(), symbol.data());
-                }
                 if (!addr) {
                     LOGE("Symbol NOT found: %s", symbol.data());
                 } else {
@@ -70,13 +68,10 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
                 }
                 return addr;
             },
-            .art_symbol_prefix_resolver = [&art](auto symbol) -> void* {
+            .art_symbol_prefix_resolver = [](auto symbol) -> void* {
                 void* addr = art.getSymbPrefixFirstOffset(symbol);
                 if (!addr) {
-                    addr = DobbySymbolResolver(getArtPath().c_str(), symbol);
-                }
-                if (!addr) {
-                    LOGE("Prefix symbol NOT found even with Dobby: %s", symbol);
+                    LOGE("Prefix symbol NOT found: %s", symbol);
                 } else {
                     LOGD("Prefix symbol found: %s at %p", symbol, addr);
                 }
@@ -86,6 +81,10 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             .generated_source_name = "LSPlant",
             .generated_method_name = "hookStub"
     };
+    if (!lsplant::Init(env, initInfo)) {
+        LOGE("LSPlant Init failed");
+        return JNI_ERR;
+    }
     (void)lsplant::Init(env, initInfo);
     return JNI_VERSION_1_6;
 }
