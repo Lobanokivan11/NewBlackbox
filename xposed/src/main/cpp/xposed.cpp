@@ -58,14 +58,8 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
     lsplant::InitInfo initInfo {
             .inline_hooker = inlineHooker,
             .inline_unhooker = inlineUnHooker,
-            .art_symbol_resolver = [&art](std::string_view symbol) -> void *{
-                void* addr = art.getSymbAddress(symbol.data());
-                if (!addr) {
-                    LOGE("Symbol not found: %s", symbol.data());
-                } else {
-                    LOGD("Symbol found: %s at %p", symbol.data(), addr);
-                }
-                return addr;
+            .art_symbol_resolver = [](std::string_view symbol) -> void * {
+                return DobbySymbolResolver(getArtPath().c_str(), symbol.data());
             },
             .art_symbol_prefix_resolver = [&art](auto symbol) {
                 void* addr = art.getSymbPrefixFirstOffset(symbol);
