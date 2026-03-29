@@ -297,7 +297,7 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
                                     null,
                                     null
                                 );
-                                black.android.content.pm.SigningInfo brSigningInfo = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.SigningInfo.class);
+                                black.android.content.pm.SigningInfo brSigningInfo = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.SigningInfo.class, null, false);
                                 packageInfo.signingInfo = brSigningInfo._new(signingDetails);
                             } catch (Exception e) {
                                 Log.e("BPM", "Failed to fake SigningInfo for " + packageName, e);
@@ -309,6 +309,35 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
             return packageInfo;
         }
         return null;
+    }
+
+    private Optional<Signature> generateFakeSignature(String packageName) {
+        BPackageSettings ps;
+        synchronized (mPackages) {
+            ps = mPackages.get(packageName);
+        }
+        if (ps == null || ps.pkg == null || ps.pkg.mAppMetaData == null) {
+            return Optional.empty();
+        }
+        String hexSignature = ps.pkg.mAppMetaData.getString("fake-signature");
+        if (hexSignature == null || hexSignature.isEmpty()) {
+            return Optional.empty();
+        }
+        try {
+            return Optional.of(new Signature(decodeHex(hexSignature)));
+        } catch (Exception e) {
+            return Optional.empty();
+        }
+    }
+
+    private byte[] decodeHex(String s) {
+        int len = s.length();
+        byte[] data = new byte[len / 2];
+        for (int i = 0; i < len; i += 2) {
+            data[i / 2] = (byte) ((Character.digit(s.charAt(i), 16) << 4)
+                                  + Character.digit(s.charAt(i+1), 16));
+        }
+        return data;
     }
 
     @Override
