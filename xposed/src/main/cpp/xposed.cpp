@@ -26,11 +26,19 @@ bool inlineUnHooker(void *originalFunc) {
 }
 
 std::string getArtPath() {
-    if (sizeof(void*) == 8) {
-        return "/apex/com.android.art/lib64/libart.so";
-    } else {
-        return "/apex/com.android.art/lib/libart.so";
+    std::string libDir = (sizeof(void*) == 8) ? "lib64" : "lib";
+    std::vector<std::string> searchPaths = {
+        "/apex/com.android.art/" + libDir + "/libart.so",
+        "/apex/com.android.runtime/" + libDir + "/libart.so",
+        "/system/" + libDir + "/libart.so",
+        "/system/apex/com.android.art/" + libDir + "/libart.so"
+    };
+    for (const auto& path : searchPaths) {
+        if (access(path.c_str(), R_OK) == 0) {
+            return path;
+        }
     }
+    return "";
 }
 
 extern "C"
@@ -81,10 +89,6 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             .generated_source_name = "LSPlant",
             .generated_method_name = "hookStub"
     };
-    if (!lsplant::Init(env, initInfo)) {
-        LOGE("LSPlant Init failed");
-        return JNI_ERR;
-    }
     (void)lsplant::Init(env, initInfo);
     return JNI_VERSION_1_6;
 }
