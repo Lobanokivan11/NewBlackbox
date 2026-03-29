@@ -8,6 +8,7 @@
 #include <string>
 #include <functional>
 #include <string_view>
+#include <unistd.h>
 
 void *inlineHooker(void *targetFunc, void *replaceFunc) {
     auto pageSize = sysconf(_SC_PAGE_SIZE);
@@ -78,10 +79,11 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             },
             .art_symbol_prefix_resolver = [](auto symbol) -> void* {
                 void* addr = art.getSymbPrefixFirstOffset(symbol);
+                std::string sym_str(symbol);
                 if (!addr) {
-                    LOGE("Prefix symbol NOT found: %s", symbol);
+                    LOGE("Prefix symbol NOT found: %s", sym_str.c_str());
                 } else {
-                    LOGD("Prefix symbol found: %s at %p", symbol, addr);
+                    LOGD("Prefix symbol found: %s at %p", sym_str.c_str(), addr);
                 }
                 return addr;
             },
