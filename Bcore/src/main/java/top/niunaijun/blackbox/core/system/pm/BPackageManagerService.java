@@ -282,7 +282,31 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
             ps = mPackages.get(packageName);
         }
         if (ps != null) {
-            return PackageManagerCompat.generatePackageInfo(ps, flags, ps.readUserState(userId), userId);
+            PackageInfo packageInfo = PackageManagerCompat.generatePackageInfo(ps, flags, ps.readUserState(userId), userId);
+            if (packageInfo != null) {
+                boolean needSignatures = (flags & android.content.pm.PackageManager.GET_SIGNATURES) != 0 
+                    || (flags & android.content.pm.PackageManager.GET_SIGNING_CERTIFICATES) != 0;
+                if (needSignatures) {
+                    generateFakeSignature(packageName).ifPresent(fakeSignature -> {
+                        packageInfo.signatures = new Signature[]{fakeSignature};
+                        if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.P) {
+                            try {
+                                SigningDetails signingDetails = new SigningDetails(
+                                    packageInfo.signatures,
+                                    2,
+                                    null,
+                                    null
+                                );
+                                black.android.content.pm.SigningInfo brSigningInfo = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.SigningInfo.class);
+                                packageInfo.signingInfo = brSigningInfo._new(signingDetails);
+                            } catch (Exception e) {
+                                Log.e("BPM", "Failed to fake SigningInfo for " + packageName, e);
+                            }
+                        }
+                    });
+                }
+            }
+            return packageInfo;
         }
         return null;
     }
