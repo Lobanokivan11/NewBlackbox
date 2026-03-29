@@ -15,6 +15,7 @@ project("xposed")
 # Gradle automatically packages shared libraries with your APK.
 
 set(DobbyHome Dobby)
+set(CMAKE_SHARED_LINKER_FLAGS "${CMAKE_SHARED_LINKER_FLAGS} -Wl,-z,common-page-size=16384 -Wl,-z,max-page-size=16384")
 include_directories(
         ${DobbyHome}/include
 )
