@@ -304,9 +304,9 @@ public class BPackageManagerService extends IBPackageManagerService.Stub impleme
                                     null
                                 );
                                 black.android.content.pm.PackageParser.SigningDetails brDetails = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.PackageParser.SigningDetails.class, null, false);
-                                Object signingDetails = brDetails._new(packageInfo.signatures, 2, null, null);
+                                Object fakeDetails = brDetails._new(packageInfo.signatures, 2, null, null);
                                 black.android.content.pm.SigningInfo brSigningInfo = top.niunaijun.blackreflection.BlackReflection.create(black.android.content.pm.SigningInfo.class, null, false);
-                                packageInfo.signingInfo = brSigningInfo._new((android.content.pm.PackageParser.SigningDetails) signingDetails);
+                                packageInfo.signingInfo = brSigningInfo._new(fakeDetails);
                             } catch (Exception e) {
                                 Log.e("BPM", "Failed to fake SigningInfo for " + packageName, e);
                             }
