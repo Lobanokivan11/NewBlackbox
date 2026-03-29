@@ -61,10 +61,13 @@ JNI_OnLoad(JavaVM* vm, void* reserved) {
             .art_symbol_resolver = [](std::string_view symbol) -> void * {
                 return DobbySymbolResolver(getArtPath().c_str(), symbol.data());
             },
-            .art_symbol_prefix_resolver = [&art](auto symbol) {
+            .art_symbol_prefix_resolver = [&art](auto symbol) -> void* {
                 void* addr = art.getSymbPrefixFirstOffset(symbol);
                 if (!addr) {
-                    LOGE("Prefix symbol not found: %s", symbol);
+                    addr = DobbySymbolResolver(getArtPath().c_str(), symbol);
+                }
+                if (!addr) {
+                    LOGE("Prefix symbol NOT found even with Dobby: %s", symbol);
                 } else {
                     LOGD("Prefix symbol found: %s at %p", symbol, addr);
                 }
