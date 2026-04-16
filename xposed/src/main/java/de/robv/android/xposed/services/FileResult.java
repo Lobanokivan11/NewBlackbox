@@ -15,7 +15,21 @@ public final class FileResult {
     /** File last modification time. */
     public final long mtime;
 
-    /*package*/ FileResult(InputStream stream, long size, long mtime) {
+    public FileResult(long size, long mtime) {
+        this.content = null;
+        this.stream = null;
+        this.size = size;
+        this.mtime = mtime;
+    }
+
+    public FileResult(byte[] content, long size, long mtime) {
+        this.content = content;
+        this.stream = null;
+        this.size = size;
+        this.mtime = mtime;
+    }
+
+    public FileResult(InputStream stream, long size, long mtime) {
         this.content = null;
         this.stream = stream;
         this.size = size;
@@ -31,13 +45,11 @@ public final class FileResult {
             sb.append(content.length);
             sb.append(", ");
         }
-
         if (stream != null) {
             sb.append("stream: ");
             sb.append(stream);
             sb.append(", ");
         }
-
         sb.append("size: ");
         sb.append(size);
         sb.append(", mtime: ");
