@@ -6,17 +6,23 @@
 #include <vector>
 #include <unistd.h>
 
-typedef void (*hook0_t)(JNIEnv*, jclass, jobject, jclass, jint, jobject);
+typedef jobject (*hook0_t)(JNIEnv*, jclass, jobject, jobject, jobject);
 hook0_t orig_hook0 = nullptr;
 
-void replaced_hook0(JNIEnv* env, jclass clazz, jobject reflectedMethodHandle, 
-                    jclass declaredClass, jint slot, jobject additionalInfo) {
-    
-    LOGD("XposedBridge_hook0 called!");
+jobject replaced_hook0(JNIEnv* env, jclass clazz, jobject context, jobject member, jobject callback) {
+    LOGD("XposedBridge_hook0 called for member!");
     if (orig_hook0) {
-        orig_hook0(env, clazz, reflectedMethodHandle, declaredClass, slot, additionalInfo);
+        return orig_hook0(env, clazz, context, member, callback);
     }
+    return nullptr; 
 }
+static JNINativeMethod gMethods[] = {
+    {
+        "hook0", 
+        "(Ljava/lang/Object;Ljava/lang/reflect/Member;Ljava/lang/reflect/Method;)Ljava/lang/reflect/Method;", 
+        (void*)replaced_hook0
+    }
+};
 std::string getArtPath() {
     const char* libDir = (sizeof(void*) == 8) ? "lib64" : "lib";
     std::vector<std::string> searchPaths = {
@@ -33,28 +39,15 @@ std::string getArtPath() {
 JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     JNIEnv *env;
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
-
     jclass bridgeClass = env->FindClass("de/robv/android/xposed/XposedBridge");
     if (!bridgeClass) {
         LOGE("XposedBridge class not found");
         return JNI_VERSION_1_6;
     }
-    
-    std::string artPath = getArtPath();
-    LSPosed::ElfImg art_img(artPath.c_str());
-    void* target_func = (void*)DobbySymbolResolver(nullptr, "Java_de_robv_android_xposed_XposedBridge_hook0");
-
-    if (!target_func) {
-        LOGE("Could not find Java_de_robv_android_xposed_XposedBridge_hook0 symbol");
-        return JNI_VERSION_1_6;
+    if (env->RegisterNatives(bridgeClass, gMethods, 1) < 0) {
+        LOGE("RegisterNatives failed for hook0");
+        return JNI_ERR;
     }
-    int ret = DobbyHook(target_func, (dobby_dummy_func_t)replaced_hook0, (dobby_dummy_func_t *)&orig_hook0);
-
-    if (ret == 0) {
-        LOGD("Successfully hooked XposedBridge_hook0 at %p", target_func);
-    } else {
-        LOGE("Failed to hook XposedBridge_hook0, error code: %d", ret);
-    }
-
+    LOGD("Successfully registered hook0");
     return JNI_VERSION_1_6;
 }
