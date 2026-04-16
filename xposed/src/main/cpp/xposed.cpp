@@ -21,7 +21,7 @@ void *inlineHooker(void *targetFunc, void *replaceFunc) {
     mprotect(alignedAddr, pageSize, PROT_READ | PROT_WRITE | PROT_EXEC);
 
     void *originalFunc = nullptr;
-    if (DobbyHook(targetFunc, (dobby_dummy_func_t)replaceFunc, (dobby_dummy_func_t *)&originalFunc) == kMemoryOperationError) {
+    if (DobbyHook(targetFunc, (dobby_dummy_func_t)replaceFunc, (dobby_dummy_func_t *)&originalFunc) != 0) {
         LOGE("Dobby failed to hook at %p due to memory protection", targetFunc);
         return nullptr;
     }
