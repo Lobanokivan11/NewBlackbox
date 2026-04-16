@@ -170,7 +170,7 @@ public class IPackageManagerProxy extends BinderInvocationStub {
             appInfo.packageName = "com.android.vending";
             appInfo.name = "Google Play Store";
             appInfo.flags = ApplicationInfo.FLAG_SYSTEM;
-            appInfo.uid = 10001; 
+            appInfo.uid = android.os.Process.myUid();
             packageInfo.applicationInfo = appInfo;
             
             Slog.d(TAG, "GetPackageInfo: Providing fake Google Play Services info");
