@@ -37,7 +37,7 @@ std::string getArtPath() {
     const char* libDir = (sizeof(void*) == 8) ? "lib64" : "lib";
     std::vector<std::string> searchPaths = {
         "/apex/com.android.art/" + std::string(libDir) + "/libart.so",
-        "/apex/com.android.runtime/" + std::string(libDir) + "/libart.so", // Для старых версий
+        "/apex/com.android.runtime/" + std::string(libDir) + "/libart.so",
         "/system/" + std::string(libDir) + "/libart.so"
     };
 
