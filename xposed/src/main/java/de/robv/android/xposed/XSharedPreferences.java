@@ -51,6 +51,17 @@ public final class XSharedPreferences implements SharedPreferences {
         }.start();
     }
 
+    private Map<String, Object> readMap(java.io.InputStream is) {
+        try {
+            Class<?> xmlUtils = Class.forName("com.android.internal.util.XmlUtils");
+            java.lang.reflect.Method readMapXml = xmlUtils.getMethod("readMapXml", java.io.InputStream.class);
+            return (Map<String, Object>) readMapXml.invoke(null, is);
+        } catch (Exception e) {
+            Log.e(TAG, "Error reading map XML", e);
+            return new HashMap<>();
+        }
+    }
+
     private void loadFromDiskLocked() {
         if (mLoaded) return;
 
@@ -59,7 +70,7 @@ public final class XSharedPreferences implements SharedPreferences {
         try {
             result = SELinuxHelper.getAppDataFileService().getFileInputStream(mFilename, mFileSize, mLastModified);
             if (result.stream != null) {
-                map = XposedHelpers.readMapXml(result.stream);
+                map = readMap(result.stream);
                 result.stream.close();
             } else {
                 map = mMap;
