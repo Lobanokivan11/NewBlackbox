@@ -4,6 +4,7 @@
 #include "Utils/log.h"
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 typedef void (*hook0_t)(JNIEnv*, jclass, jobject, jclass, jint, jobject);
 hook0_t orig_hook0 = nullptr;
