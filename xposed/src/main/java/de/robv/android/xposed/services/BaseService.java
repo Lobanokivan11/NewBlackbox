@@ -93,7 +93,7 @@ public abstract class BaseService {
      * @throws IOException In case an error occurred while reading the file.
      */
     public abstract FileResult readFile(String filename, long previousSize, long previousTime) throws IOException;
-
+    public abstract boolean hasDirectFileAccess();
     /**
      * Read a file into memory, optionally only if it has changed since the last time.
      *
