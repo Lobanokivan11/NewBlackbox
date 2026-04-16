@@ -27,8 +27,8 @@ public final class XSharedPreferences implements SharedPreferences {
     startLoadFromDisk();
   }
   
-  public XSharedPreferences(String paramString) {
-    this(paramString, stringBuilder.toString());
+  public XSharedPreferences(String packageName) {
+    this(packageName, packageName + "_preferences");
   }
   
   public XSharedPreferences(String paramString1, String paramString2) {
