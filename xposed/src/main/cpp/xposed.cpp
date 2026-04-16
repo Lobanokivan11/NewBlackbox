@@ -1,38 +1,21 @@
 #include <jni.h>
 #include <dobby.h>
-#include <lsplant.hpp>
-#include <sys/sysconf.h>
-#include <sys/mman.h>
 #include "Utils/elf_util.h"
 #include "Utils/log.h"
 #include <string>
 #include <vector>
-#include <unistd.h>
 
-uintptr_t align_down(uintptr_t addr, size_t alignment) {
-    return addr & ~(alignment - 1);
-}
+typedef void (*hook0_t)(JNIEnv*, jclass, jobject, jclass, jint, jobject);
+hook0_t orig_hook0 = nullptr;
 
-void *inlineHooker(void *targetFunc, void *replaceFunc) {
-    if (!targetFunc) return nullptr;
-
-    size_t pageSize = sysconf(_SC_PAGE_SIZE);
-    void *alignedAddr = (void *)align_down((uintptr_t)targetFunc, pageSize);
-    mprotect(alignedAddr, pageSize, PROT_READ | PROT_WRITE | PROT_EXEC);
-
-    void *originalFunc = nullptr;
-    if (DobbyHook(targetFunc, (dobby_dummy_func_t)replaceFunc, (dobby_dummy_func_t *)&originalFunc) != 0) {
-        LOGE("Dobby failed to hook at %p due to memory protection", targetFunc);
-        return nullptr;
+void replaced_hook0(JNIEnv* env, jclass clazz, jobject reflectedMethodHandle, 
+                    jclass declaredClass, jint slot, jobject additionalInfo) {
+    
+    LOGD("XposedBridge_hook0 called!");
+    if (orig_hook0) {
+        orig_hook0(env, clazz, reflectedMethodHandle, declaredClass, slot, additionalInfo);
     }
-    return originalFunc;
 }
-
-bool inlineUnHooker(void *originalFunc) {
-    if (!originalFunc) return false;
-    return DobbyDestroy(originalFunc) == 0;
-}
-
 std::string getArtPath() {
     const char* libDir = (sizeof(void*) == 8) ? "lib64" : "lib";
     std::vector<std::string> searchPaths = {
@@ -40,11 +23,8 @@ std::string getArtPath() {
         "/apex/com.android.runtime/" + std::string(libDir) + "/libart.so",
         "/system/" + std::string(libDir) + "/libart.so"
     };
-
     for (const auto& path : searchPaths) {
-        if (access(path.c_str(), R_OK) == 0) {
-            return path;
-        }
+        if (access(path.c_str(), R_OK) == 0) return path;
     }
     return "";
 }
@@ -53,26 +33,26 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* vm, void* reserved) {
     JNIEnv *env;
     if (vm->GetEnv((void **) &env, JNI_VERSION_1_6) != JNI_OK) return JNI_ERR;
 
-    std::string artPath = getArtPath();
-    if (artPath.empty()) return JNI_ERR;
-    static auto art_img = std::unique_ptr<LSPosed::ElfImg>(new LSPosed::ElfImg(artPath.c_str()));
+    jclass bridgeClass = env->FindClass("de/robv/android/xposed/XposedBridge");
+    if (!bridgeClass) {
+        LOGE("XposedBridge class not found");
+        return JNI_VERSION_1_6;
+    }
     
-    lsplant::InitInfo initInfo {
-        .inline_hooker = inlineHooker,
-        .inline_unhooker = inlineUnHooker,
-        .art_symbol_resolver = [](std::string_view symbol) -> void * {
-            return art_img->getSymbAddress(symbol.data());
-        },
-        .art_symbol_prefix_resolver = [](auto symbol) -> void* {
-            return art_img->getSymbPrefixFirstOffset(symbol);
-        },
-        .generated_class_name = "org/lsposed/lsplant/Stub" + std::to_string(getpid()), 
-        .generated_source_name = "LSPlant",
-        .generated_method_name = "m"
-    };
-    if (!lsplant::Init(env, initInfo)) {
-        LOGE("LSPlant Init Failed - Android 15 compatibility check required");
-        return JNI_ERR;
+    std::string artPath = getArtPath();
+    LSPosed::ElfImg art_img(artPath.c_str());
+    void* target_func = (void*)DobbySymbolResolver(nullptr, "Java_de_robv_android_xposed_XposedBridge_hook0");
+
+    if (!target_func) {
+        LOGE("Could not find Java_de_robv_android_xposed_XposedBridge_hook0 symbol");
+        return JNI_VERSION_1_6;
+    }
+    int ret = DobbyHook(target_func, (dobby_dummy_func_t)replaced_hook0, (dobby_dummy_func_t *)&orig_hook0);
+
+    if (ret == 0) {
+        LOGD("Successfully hooked XposedBridge_hook0 at %p", target_func);
+    } else {
+        LOGE("Failed to hook XposedBridge_hook0, error code: %d", ret);
     }
 
     return JNI_VERSION_1_6;
