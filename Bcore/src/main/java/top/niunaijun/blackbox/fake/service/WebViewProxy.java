@@ -60,7 +60,8 @@ public class WebViewProxy extends ClassInvocationStub {
                     
                     String packageName = context.getPackageName();
                     String userId = String.valueOf(BActivityThread.getUserId());
-                    String uniqueDataDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + android.os.Process.myPid();
+                    String pid = String.valueOf(android.os.Process.myPid());
+                    String uniqueDataDir = context.getApplicationInfo().dataDir + "/webview_" + userId + "_" + pid;
                     
                     File dataDir = new File(uniqueDataDir);
                     if (!dataDir.exists()) {
