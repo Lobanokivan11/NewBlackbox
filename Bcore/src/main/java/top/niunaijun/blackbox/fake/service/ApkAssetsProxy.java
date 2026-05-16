@@ -3,7 +3,7 @@ package top.niunaijun.blackbox.fake.service;
 import android.util.Log;
 
 import java.lang.reflect.Method;
-
+import top.niunaijun.blackbox.BlackBoxCore;
 import top.niunaijun.blackbox.fake.hook.ClassInvocationStub;
 import top.niunaijun.blackbox.fake.hook.MethodHook;
 import top.niunaijun.blackbox.fake.hook.ProxyMethod;
