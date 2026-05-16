@@ -1769,8 +1769,35 @@ public class BlackBoxCore extends ClientConfiguration {
             
         }
     }
-    
-    
+
+    public static void installFakeWebView(Context context) {
+        File targetDir = new File(context.getFilesDir(), "fake_webview");
+        if (!targetDir.exists()) targetDir.mkdirs();
+
+        File targetApk = new File(targetDir, "fake_webview.apk");
+
+        if (targetApk.exists()) {
+            Log.d("FakeWebView", "Already installed: " + targetApk.getAbsolutePath());
+            return;
+        }
+
+        try (InputStream in = context.getAssets().open("fake_webview.apk");
+            FileOutputStream out = new FileOutputStream(targetApk)) {
+
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+
+            out.flush();
+            Log.d("FakeWebView", "Installed to: " + targetApk.getAbsolutePath());
+
+        } catch (Exception e) {
+            Log.e("FakeWebView", "Install failed", e);
+        }
+    }
+
     private static void ensureProperInitialization() {
         try {
             
@@ -1792,6 +1819,12 @@ public class BlackBoxCore extends ClientConfiguration {
                 Slog.w(TAG, "ServiceManager initialization failed: " + e.getMessage());
             }
             
+            try {
+                installFakeWebView(BlackBoxCore.getContext());
+                Slog.d(TAG, "FakeWebView initialized successfully");
+            } catch (Exception e) {
+                Slog.w(TAG, "FakeWebView initialization failed: " + e.getMessage());
+            }
             
             try {
                 BActivityThread.hookActivityThread();
