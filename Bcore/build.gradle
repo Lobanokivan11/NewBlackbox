@@ -14,7 +14,6 @@ android {
     buildFeatures {
         prefab true
         aidl true
-        androidResources true
     }
     defaultConfig {
         minSdkVersion rootProject.ext.minSdk

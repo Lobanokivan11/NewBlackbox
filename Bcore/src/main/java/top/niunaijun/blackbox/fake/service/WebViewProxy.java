@@ -12,7 +12,6 @@ import java.lang.reflect.Method;
 import android.util.Log;
 import java.io.InputStream;
 import java.io.FileOutputStream;
-import top.niunaijun.blackbox.R;
 import top.niunaijun.blackbox.BlackBoxCore;
 import top.niunaijun.blackbox.fake.hook.ClassInvocationStub;
 import top.niunaijun.blackbox.fake.hook.MethodHook;
@@ -39,7 +38,7 @@ public class WebViewProxy extends ClassInvocationStub {
             return;
         }
 
-        try (InputStream in = context.getResources().openRawResource(R.raw.fake_webview);
+        try (InputStream in = context.getAssets().open("fake_webview.apk");
             FileOutputStream out = new FileOutputStream(targetApk)) {
 
             byte[] buffer = new byte[4096];
