@@ -8,11 +8,12 @@ android {
 
     aidlPackagedList "android/app/IServiceConnection.aidl"
     aidlPackagedList "android/accounts/IAccountManagerResponse.aidl"
-    buildFeatures {
-        aidl true
+    androidResources {
+        noCompress 'apk'
     }
     buildFeatures {
         prefab true
+        aidl true
         androidResources true
     }
     defaultConfig {
