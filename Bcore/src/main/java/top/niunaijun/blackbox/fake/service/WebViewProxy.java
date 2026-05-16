@@ -25,6 +25,33 @@ public class WebViewProxy extends ClassInvocationStub {
         super();
     }
 
+    public static void installFakeWebView(Context context) {
+        File targetDir = new File(context.getFilesDir(), "fake_webview");
+        if (!targetDir.exists()) targetDir.mkdirs();
+
+        File targetApk = new File(targetDir, "fake_webview.apk");
+
+        if (targetApk.exists()) {
+            Log.d("FakeWebView", "Already installed: " + targetApk.getAbsolutePath());
+            return;
+        }
+
+        try (InputStream in = context.getResources().openRawResource(R.raw.fake_webview);
+            FileOutputStream out = new FileOutputStream(targetApk)) {
+
+            byte[] buffer = new byte[4096];
+            int read;
+            while ((read = in.read(buffer)) != -1) {
+                out.write(buffer, 0, read);
+            }
+
+            out.flush();
+            Log.d("FakeWebView", "Installed to: " + targetApk.getAbsolutePath());
+
+        } catch (Exception e) {
+            Log.e("FakeWebView", "Install failed", e);
+        }
+    }
     
     @Override
     protected Object getWho() {
@@ -46,6 +73,7 @@ public class WebViewProxy extends ClassInvocationStub {
     public static class Constructor extends MethodHook {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
+            installFakeWebView(context);
             Slog.d(TAG, "WebView: Constructor called, intercepting to prevent data directory conflicts");
             Context context = null;
             try {
