@@ -13,6 +13,7 @@ android {
     }
     buildFeatures {
         prefab true
+        androidResources true
     }
     defaultConfig {
         minSdkVersion rootProject.ext.minSdk

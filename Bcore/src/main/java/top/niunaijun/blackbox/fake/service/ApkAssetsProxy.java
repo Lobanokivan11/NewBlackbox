@@ -54,7 +54,7 @@ public class ApkAssetsProxy extends ClassInvocationStub {
                                 path.contains(".frro") ||
                                 path.contains("systemui") ||
                                 path.contains("data@resource-cache@"))) {
-                String fakePath = context.getFilesDir().getAbsolutePath() + "/fake_webview/fake_webview.apk";
+                String fakePath = BlackBoxCore.getContext().getFilesDir().getAbsolutePath() + "/fake_webview/fake_webview.apk";
                 Log.d(TAG, "Redirecting LoadOverlayFromPath from " + path + " to " + fakePath);
                 args[0] = fakePath;
             }
@@ -76,7 +76,7 @@ public class ApkAssetsProxy extends ClassInvocationStub {
                                 path.contains(".frro") ||
                                 path.contains("systemui") ||
                                 path.contains("data@resource-cache@"))) {
-                String fakePath = context.getFilesDir().getAbsolutePath() + "/fake_webview/fake_webview.apk";
+                String fakePath = BlackBoxCore.getContext().getFilesDir().getAbsolutePath() + "/fake_webview/fake_webview.apk";
                 Log.d(TAG, "Redirecting nativeLoad from " + path + " to " + fakePath);
                 args[0] = fakePath;
             }

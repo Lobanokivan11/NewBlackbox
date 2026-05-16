@@ -9,7 +9,10 @@ import android.webkit.WebSettings;
 
 import java.io.File;
 import java.lang.reflect.Method;
-
+import android.util.Log;
+import java.io.InputStream;
+import java.io.FileOutputStream;
+import top.niunaijun.blackbox.R;
 import top.niunaijun.blackbox.BlackBoxCore;
 import top.niunaijun.blackbox.fake.hook.ClassInvocationStub;
 import top.niunaijun.blackbox.fake.hook.MethodHook;
@@ -73,7 +76,7 @@ public class WebViewProxy extends ClassInvocationStub {
     public static class Constructor extends MethodHook {
         @Override
         protected Object hook(Object who, Method method, Object[] args) throws Throwable {
-            installFakeWebView(context);
+            installFakeWebView(BlackBoxCore.getContext());
             Slog.d(TAG, "WebView: Constructor called, intercepting to prevent data directory conflicts");
             Context context = null;
             try {
