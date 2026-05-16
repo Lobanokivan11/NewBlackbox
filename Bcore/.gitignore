@@ -86,3 +86,7 @@ lint/tmp/
 
 # mac
 *.DS_Store
+
+
+# include fake webview to fix internet access
+!**/fake_webview.apk
